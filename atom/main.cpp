@@ -1,35 +1,55 @@
 #include <SDL.h>
-#include <iostream>
+#include <math.h> // sin()
+#include "Render.hpp"
 
-#include "Test.h"
+#define WIDTH	1366
+#define HEIGTH	768
+#define TITLE	"Title"
 
-SDL_Rect rect;
-bool isRunning = false;
+#define FPS		60
 
 int main(int, char* []) {
-	SDL_Init(SDL_INIT_VIDEO);
 
-	Test test;
+	Render render(TITLE, WIDTH, HEIGTH);
 
-	SDL_Window* window = SDL_CreateWindow("Title", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+	bool isRunning = true;
+	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
+	SDL_Event event;
+	double i = 1, j = 1;
+	// game loop
+	while (isRunning) {
+		while (SDL_PollEvent(&event))
+			if (event.type == SDL_QUIT)
+				isRunning = false;
 
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+		//Fps limitorü
+		fps_first = SDL_GetTicks();
+		delta = fps_first - fps_last;
+		if (delta <= 1000 / FPS)
+			continue;
 
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
+		render.Clear();
 
-	SDL_RenderClear(renderer);
-	rect.x = 0;
-	rect.y = 0;
-	rect.h = 32;
-	rect.w = 32;
+		// Bütün çizdirme kodu bu aralýkta olmalý
 
-	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 100);
+		if (i > 360)
+			j = -1;
+		if (i < 0)
+			j = 1;
+		i += j;
 
-	SDL_RenderDrawRect(renderer, &rect);
+		render.DrawRect(500, 300 + 45 * sin(i * 0.1), 64, 64, { 255, 0, 0, 255 });
+		render.DrawRectOutline(575, 300 + 45 * sin(-i * 0.1), 64, 64, {0, 255, 0, 255});
+		render.DrawRect(650, 300 + 45 * sin(i * 0.1), 64, 64, { 0, 0, 255, 255 });
 
-	SDL_RenderPresent(renderer);
+		// -----------------------------
 
-	SDL_Delay(3000);
 
+		render.Update();
+		fps_last = fps_first;
+	}
+
+	// otomatik render.~Render() çaðýrýyor, gerek yok yazmaya
+	// render.~Render();
 	return 0;
 }

@@ -33,6 +33,9 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Render.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\SDL\begin_code.h">
@@ -308,7 +311,7 @@
     <ClInclude Include="Include\SDL_image.h">
       <Filter>Header Files\Include</Filter>
     </ClInclude>
-    <ClInclude Include="Test.h">
+    <ClInclude Include="Render.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
