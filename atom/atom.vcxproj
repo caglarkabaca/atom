@@ -248,6 +248,7 @@
     <ClInclude Include="Include\SDL\SDL_version.h" />
     <ClInclude Include="Include\SDL\SDL_video.h" />
     <ClInclude Include="Include\SDL\SDL_vulkan.h" />
+    <ClInclude Include="Test.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Lib\x64\SDL2.dll" />
