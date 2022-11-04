@@ -308,6 +308,9 @@
     <ClInclude Include="Include\SDL_image.h">
       <Filter>Header Files\Include</Filter>
     </ClInclude>
+    <ClInclude Include="Test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Lib\x86\SDL2.lib">

@@ -1,11 +1,15 @@
 #include <SDL.h>
 #include <iostream>
 
+#include "Test.h"
+
 SDL_Rect rect;
 bool isRunning = false;
 
 int main(int, char* []) {
 	SDL_Init(SDL_INIT_VIDEO);
+
+	Test test;
 
 	SDL_Window* window = SDL_CreateWindow("Title", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
 
@@ -27,7 +31,5 @@ int main(int, char* []) {
 
 	SDL_Delay(3000);
 
-	
-	
-    return 0;
+	return 0;
 }
