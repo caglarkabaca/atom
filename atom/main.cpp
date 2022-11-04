@@ -1,6 +1,9 @@
 #include <SDL.h>
 #include <iostream>
 
+SDL_Rect rect;
+bool isRunning = false;
+
 int main(int, char* []) {
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -11,10 +14,20 @@ int main(int, char* []) {
 	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
 
 	SDL_RenderClear(renderer);
+	rect.x = 0;
+	rect.y = 0;
+	rect.h = 32;
+	rect.w = 32;
+
+	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 100);
+
+	SDL_RenderDrawRect(renderer, &rect);
 
 	SDL_RenderPresent(renderer);
 
 	SDL_Delay(3000);
+
+	
 	
     return 0;
 }
