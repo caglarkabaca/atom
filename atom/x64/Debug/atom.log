@@ -9,12 +9,8 @@
   C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\SDL2_ttf.dll
   C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\zlib1.dll
          10 file(s) copied.
-  Map.cpp
-  Render.cpp
-  TextureManager.cpp
   main.cpp
-C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(42,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(43,35): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(44,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-  Generating Code...
+C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(45,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(46,35): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(47,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
   atom.vcxproj -> C:\Users\rugot\OneDrive\Desktop\atom\x64\Debug\atom.exe
