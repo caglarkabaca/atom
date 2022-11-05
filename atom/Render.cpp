@@ -2,8 +2,11 @@
 
 #include <iostream>
 
+SDL_Renderer* Render::renderer = nullptr;
+
 Render::Render(const char* title, int width, int height): 
-	win(NULL), renderer(NULL), title(title), width(width), height(height) /* bu constructor çaðrýldýðýnda otmatik olarak class attributýný tanýmlýyor*/ {
+	// renderer static olduðu için aþaðýdan sildim. Umarým sýkýntý olmaz.
+	win(NULL), title(title), width(width), height(height) /* bu constructor çaðrýldýðýnda otmatik olarak class attributýný tanýmlýyor*/ { 
 	
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		std::cout << "SDL INIT ERROR (Render.cpp): " << SDL_GetError() << std::endl;

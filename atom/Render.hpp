@@ -13,7 +13,7 @@
 class Render
 {
 public:
-	Render(const char* title, int width, int heigth);
+	Render(const char* title, int width, int height);
 	~Render();
 	void Clear();
 	void Update();
@@ -21,9 +21,12 @@ public:
 	// çizim fonksiyonlarý
 	void DrawRect(int x, int y, int w, int h, SDL_Color color);
 	void DrawRectOutline(int x, int y, int w, int h, SDL_Color color);
+
+	static SDL_Renderer* renderer; //renderer'ý static ve public yaptým. Çünkü TextureManager'da kullanmam gerekti.
+
 private:
 	SDL_Window* win;
-	SDL_Renderer* renderer;
+
 	const char* title;
 	int width, height;
 };

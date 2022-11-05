@@ -1,16 +1,17 @@
 #include <SDL.h>
 #include <math.h> // sin()
 #include "Render.hpp"
+#include "TextureManager.hpp"
 
 #define WIDTH	1366
-#define HEIGTH	768
+#define HEIGHT	768 //typo
 #define TITLE	"Title"
 
 #define FPS		60
 
 int main(int, char* []) {
 
-	Render render(TITLE, WIDTH, HEIGTH);
+	Render render(TITLE, WIDTH, HEIGHT);
 
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
@@ -42,8 +43,23 @@ int main(int, char* []) {
 		render.DrawRectOutline(575, 300 + 45 * sin(-i * 0.1), 64, 64, {0, 255, 0, 255});
 		render.DrawRect(650, 300 + 45 * sin(i * 0.1), 64, 64, { 0, 0, 255, 255 });
 
-		// -----------------------------
+		/* Örnek TextureManager kullanýmý
 
+	
+		SDL_Texture* grass = TextureManager::LoadTexture("assets/block1.png");
+		SDL_Rect src, dest;
+
+		src.x = src.y = 0;
+		dest.x =575;
+		dest.y = 300 + 45 * sin(-i * 0.1);
+		src.w = dest.w = 64;
+		src.h = dest.h = 64;
+		
+		TextureManager::Draw(grass, src, dest);
+
+		*/
+
+		// -----------------------------
 
 		render.Update();
 		fps_last = fps_first;

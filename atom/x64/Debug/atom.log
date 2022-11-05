@@ -1,16 +1,20 @@
-﻿  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\libfreetype-6.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\libjpeg-9.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\libpng16-16.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\libtiff-5.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\libwebp-4.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\libwebp-7.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\SDL2.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\SDL2_image.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\SDL2_ttf.dll
-  C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\zlib1.dll
+﻿  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\libfreetype-6.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\libjpeg-9.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\libpng16-16.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\libtiff-5.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\libwebp-4.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\libwebp-7.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\SDL2.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\SDL2_image.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\SDL2_ttf.dll
+  C:\Users\rugot\OneDrive\Desktop\atom\atom\Lib\x64\zlib1.dll
          10 file(s) copied.
+  Map.cpp
+  Render.cpp
+  TextureManager.cpp
   main.cpp
-C:\Users\kabac\OneDrive\Masaüstü\atom\atom\main.cpp(41,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\kabac\OneDrive\Masaüstü\atom\atom\main.cpp(42,35): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\kabac\OneDrive\Masaüstü\atom\atom\main.cpp(43,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-  atom.vcxproj -> C:\Users\kabac\OneDrive\Masaüstü\atom\x64\Debug\atom.exe
+C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(42,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(43,35): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\rugot\OneDrive\Desktop\atom\atom\main.cpp(44,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+  Generating Code...
+  atom.vcxproj -> C:\Users\rugot\OneDrive\Desktop\atom\x64\Debug\atom.exe

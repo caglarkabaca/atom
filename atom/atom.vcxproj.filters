@@ -36,6 +36,12 @@
     <ClCompile Include="Render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\SDL\begin_code.h">
@@ -312,6 +318,12 @@
       <Filter>Header Files\Include</Filter>
     </ClInclude>
     <ClInclude Include="Render.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Map.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
