@@ -2,11 +2,9 @@
 
 #include <iostream>
 
-SDL_Renderer* Render::renderer = nullptr;
-
 Render::Render(const char* title, int width, int height): 
 	// renderer static olduðu için aþaðýdan sildim. Umarým sýkýntý olmaz.
-	win(NULL), title(title), width(width), height(height) /* bu constructor çaðrýldýðýnda otmatik olarak class attributýný tanýmlýyor*/ { 
+	win(NULL), renderer(NULL), title(title), width(width), height(height) /* bu constructor çaðrýldýðýnda otmatik olarak class attributýný tanýmlýyor*/ { 
 	
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		std::cout << "SDL INIT ERROR (Render.cpp): " << SDL_GetError() << std::endl;
@@ -24,7 +22,7 @@ Render::Render(const char* title, int width, int height):
 }
 
 Render::~Render() {
-	// std::cout << "deconstructer called" << std::endl;
+	//std::cout << "deconstructer called" << std::endl;
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(win);
 	SDL_Quit();
@@ -38,6 +36,10 @@ void Render::Clear() {
 void Render::Update() {
 	SDL_RenderPresent(renderer);
 }
+
+// getter
+SDL_Renderer* Render::getRenderer() { return renderer; }
+SDL_Window* Render::getWindow() { return win; }
 
 // rect çiziyor ama içi dolu
 void Render::DrawRect(int x, int y, int w, int h, SDL_Color color) {

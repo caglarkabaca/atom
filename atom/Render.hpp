@@ -18,15 +18,18 @@ public:
 	void Clear();
 	void Update();
 
+	// getter | static biraz sýkýntý bu da ayný þekilde bi sýkýntýsý olabilir 
+	//			sonuçta pointer yoluyoruz, geçici böyle çözelim
+	SDL_Renderer* getRenderer();
+	SDL_Window* getWindow();
+
 	// çizim fonksiyonlarý
 	void DrawRect(int x, int y, int w, int h, SDL_Color color);
 	void DrawRectOutline(int x, int y, int w, int h, SDL_Color color);
 
-	static SDL_Renderer* renderer; //renderer'ý static ve public yaptým. Çünkü TextureManager'da kullanmam gerekti.
-
 private:
 	SDL_Window* win;
-
+	SDL_Renderer* renderer;
 	const char* title;
 	int width, height;
 };

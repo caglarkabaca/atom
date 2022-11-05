@@ -12,13 +12,14 @@
 int main(int, char* []) {
 
 	Render render(TITLE, WIDTH, HEIGHT);
+	TextureManager textureManager(render);
+
+	SDL_Texture* grass = textureManager.LoadTexture("assets/block1.png"); // Bunu döngünün içine sokunca Memory kullanýmý lineer artýyor. Buraya çektim
 
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
 	SDL_Event event;
 	double i = 1, j = 1;
-
-	SDL_Texture* grass = TextureManager::LoadTexture("assets/block1.png"); // Bunu döngünün içine sokunca Memory kullanýmý lineer artýyor. Buraya çektim
 	// game loop
 	
 	while (isRunning) {
@@ -46,21 +47,9 @@ int main(int, char* []) {
 		render.DrawRectOutline(575, 300 + 45 * sin(-i * 0.1), 64, 64, {0, 255, 0, 255});
 		render.DrawRect(650, 300 + 45 * sin(i * 0.1), 64, 64, { 0, 0, 255, 255 });
 
-		/* Örnek TextureManager kullanýmý 
 
-		SDL_Rect src, dest;
-
-		src.x = src.y = 0;
-		dest.x =575;
-		dest.y = 300 + 45 * sin(-i * 0.1);
-		src.w = dest.w = 64;
-		src.h = dest.h = 64;
-		
-		TextureManager::Draw(grass, src, dest);
-
-		*/
-
-		// -----------------------------
+		SDL_Rect src{0, 0, 64, 64}, dest{575, 300 + 45 * sin(-i * 0.1), 64, 64};
+		textureManager.Draw(grass, src, dest);
 
 		render.Update();
 		fps_last = fps_first;
