@@ -17,7 +17,10 @@ int main(int, char* []) {
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
 	SDL_Event event;
 	double i = 1, j = 1;
+
+	SDL_Texture* grass = TextureManager::LoadTexture("assets/block1.png"); // Bunu döngünün içine sokunca Memory kullanýmý lineer artýyor. Buraya çektim
 	// game loop
+	
 	while (isRunning) {
 		while (SDL_PollEvent(&event))
 			if (event.type == SDL_QUIT)
@@ -43,10 +46,8 @@ int main(int, char* []) {
 		render.DrawRectOutline(575, 300 + 45 * sin(-i * 0.1), 64, 64, {0, 255, 0, 255});
 		render.DrawRect(650, 300 + 45 * sin(i * 0.1), 64, 64, { 0, 0, 255, 255 });
 
-		/* Örnek TextureManager kullanýmý
+		/* Örnek TextureManager kullanýmý 
 
-	
-		SDL_Texture* grass = TextureManager::LoadTexture("assets/block1.png");
 		SDL_Rect src, dest;
 
 		src.x = src.y = 0;
