@@ -9,8 +9,5 @@
   C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\SDL2_ttf.dll
   C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\zlib1.dll
          10 file(s) copied.
-  main.cpp
-C:\Users\kabac\OneDrive\Masaüstü\atom\atom\main.cpp(41,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\kabac\OneDrive\Masaüstü\atom\atom\main.cpp(42,35): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-C:\Users\kabac\OneDrive\Masaüstü\atom\atom\main.cpp(43,28): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+  TextureManager.cpp
   atom.vcxproj -> C:\Users\kabac\OneDrive\Masaüstü\atom\x64\Debug\atom.exe

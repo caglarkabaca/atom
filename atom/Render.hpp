@@ -13,14 +13,20 @@
 class Render
 {
 public:
-	Render(const char* title, int width, int heigth);
+	Render(const char* title, int width, int height);
 	~Render();
 	void Clear();
 	void Update();
 
+	// getter | static biraz sýkýntý bu da ayný þekilde bi sýkýntýsý olabilir 
+	//			sonuçta pointer yoluyoruz, geçici böyle çözelim
+	SDL_Renderer* getRenderer();
+	SDL_Window* getWindow();
+
 	// çizim fonksiyonlarý
 	void DrawRect(int x, int y, int w, int h, SDL_Color color);
 	void DrawRectOutline(int x, int y, int w, int h, SDL_Color color);
+
 private:
 	SDL_Window* win;
 	SDL_Renderer* renderer;

@@ -1,22 +1,27 @@
 #include <SDL.h>
 #include <math.h> // sin()
 #include "Render.hpp"
+#include "TextureManager.hpp"
 
 #define WIDTH	1366
-#define HEIGTH	768
+#define HEIGHT	768 //typo
 #define TITLE	"Title"
 
 #define FPS		60
 
 int main(int, char* []) {
 
-	Render render(TITLE, WIDTH, HEIGTH);
+	Render render(TITLE, WIDTH, HEIGHT);
+	TextureManager textureManager(render);
+
+	SDL_Texture* grass = textureManager.LoadTexture("assets/block1.png"); // Bunu döngünün içine sokunca Memory kullanýmý lineer artýyor. Buraya çektim
 
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
 	SDL_Event event;
 	double i = 1, j = 1;
 	// game loop
+	
 	while (isRunning) {
 		while (SDL_PollEvent(&event))
 			if (event.type == SDL_QUIT)
@@ -42,8 +47,9 @@ int main(int, char* []) {
 		render.DrawRectOutline(575, 300 + 45 * sin(-i * 0.1), 64, 64, {0, 255, 0, 255});
 		render.DrawRect(650, 300 + 45 * sin(i * 0.1), 64, 64, { 0, 0, 255, 255 });
 
-		// -----------------------------
 
+		SDL_Rect src{0, 0, 64, 64}, dest{575, 300 + 45 * sin(-i * 0.1), 64, 64};
+		textureManager.Draw(grass, src, dest);
 
 		render.Update();
 		fps_last = fps_first;
