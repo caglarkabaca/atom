@@ -10,8 +10,8 @@ public:
 	~Raycasting();
 
 	void SetEntity(Entity* entity);
-
 	void DrawPixels(Render& render);
+	void ListenKeys(double frameTime);
 private:
 	int screenWidth, screenHeight;
 	int mapX, mapY;

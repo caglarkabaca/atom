@@ -8,6 +8,7 @@ Render::Render(const char* title, int width, int height):
 	
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		std::cout << "SDL INIT ERROR (Render.cpp): " << SDL_GetError() << std::endl;
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	

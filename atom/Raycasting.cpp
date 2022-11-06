@@ -3,7 +3,7 @@
 #include <iostream>
 
 Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY):
-	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY) {
+	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL) {
 
 	// memory allociton
 	this->map = new int* [mapX];
@@ -118,11 +118,77 @@ void Raycasting::DrawPixels(Render& render) {
 		}
 
 		//give x and y sides different brightness
-		if (side == 1) { color.r *= 0.25; color.g *= 0.25; color.b = 0.25; };
+		if (side == 1) { color.r *= 0.25; color.g *= 0.25; color.b *= 0.25; };
 
 		//verLine(x, drawStart, drawEnd, color);
 		render.DrawLine(x, drawStart, x, drawEnd, color);
 
 	}
 
+}
+
+void Raycasting::ListenKeys(double frameTime) {
+
+	Vector2D pos = entity->getPos(), dir = entity->getDir(), plane = entity->getPlane();
+	//speed modifiers
+	double moveSpeed = frameTime * 5.0; //the constant value is in squares/second
+
+	const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+
+	//move forward if no wall in front of you
+	if (currentKeyStates[SDL_SCANCODE_W])
+	{
+		if (map[int(pos.x + dir.x * moveSpeed)][int(pos.y)] == false) entity->addPosX(dir.x * moveSpeed);
+		if (map[int(pos.x)][int(pos.y + dir.y * moveSpeed)] == false) entity->addPosY(dir.y * moveSpeed);
+	}
+	//move backwards if no wall behind you
+	if (currentKeyStates[SDL_SCANCODE_S])
+	{
+		if (map[int(pos.x - dir.x * moveSpeed)][int(pos.y)] == false) entity->addPosX(-1 * dir.x * moveSpeed);
+		if (map[int(pos.x)][int(pos.y - dir.y * moveSpeed)] == false) entity->addPosY(-1 * dir.y * moveSpeed);
+	}
+
+	if (currentKeyStates[SDL_SCANCODE_A])
+	{
+		if (map[int(pos.x - dir.y * moveSpeed)][int(pos.y)] == false) entity->addPosX(-1 * dir.y * moveSpeed);
+		if (map[int(pos.x)][int(pos.y + dir.x * moveSpeed)] == false) entity->addPosY(dir.x * moveSpeed);
+	}
+	if (currentKeyStates[SDL_SCANCODE_D])
+	{
+		if (map[int(pos.x + dir.y * moveSpeed)][int(pos.y)] == false) entity->addPosX(dir.y * moveSpeed);
+		if (map[int(pos.x)][int(pos.y - dir.x * moveSpeed)] == false) entity->addPosY(-1 * dir.x * moveSpeed);
+	}
+
+	SDL_Event e;
+	while (SDL_PollEvent(&e) != 0) {
+		if (e.type == SDL_MOUSEMOTION) {
+			double rotSpeed = frameTime * 3.0 * abs(e.motion.xrel); //the constant value is in radians/second
+			//rotate to the right
+			if (e.motion.xrel > 0)
+			{
+				//both camera direction and camera plane must be rotated
+				double oldDirX = dir.x;
+				dir.x = dir.x * cos(-rotSpeed) - dir.y * sin(-rotSpeed);
+				dir.y = oldDirX * sin(-rotSpeed) + dir.y * cos(-rotSpeed);
+				double oldPlaneX = plane.x;
+				plane.x = plane.x * cos(-rotSpeed) - plane.y * sin(-rotSpeed);
+				plane.y = oldPlaneX * sin(-rotSpeed) + plane.y * cos(-rotSpeed);
+				entity->setDir(dir);
+				entity->setPlane(plane);
+			}
+			//rotate to the left
+			if (e.motion.xrel < 0)
+			{
+				//both camera direction and camera plane must be rotated
+				double oldDirX = dir.x;
+				dir.x = dir.x * cos(rotSpeed) - dir.y * sin(rotSpeed);
+				dir.y = oldDirX * sin(rotSpeed) + dir.y * cos(rotSpeed);
+				double oldPlaneX = plane.x;
+				plane.x = plane.x * cos(rotSpeed) - plane.y * sin(rotSpeed);
+				plane.y = oldPlaneX * sin(rotSpeed) + plane.y * cos(rotSpeed);
+				entity->setDir(dir);
+				entity->setPlane(plane);
+			}
+		}
+	}
 }

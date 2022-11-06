@@ -10,7 +10,7 @@
 #define HEIGHT	768 //typo
 #define TITLE	"Title"
 
-#define FPS		60
+#define FPS		144
 
 int main(int, char* []) {
 
@@ -48,16 +48,13 @@ int main(int, char* []) {
 
 	rayCasting.SetEntity(&player);
 
+	double oldTime = 0, time = 0;
+
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
 	SDL_Event event;
-	double i = 1, j = 1;
 	// game loop
 	while (isRunning) {
-		while (SDL_PollEvent(&event))
-			if (event.type == SDL_QUIT)
-				isRunning = false;
-
 		//Fps limitorü
 		fps_first = SDL_GetTicks();
 		delta = fps_first - fps_last;
@@ -66,10 +63,18 @@ int main(int, char* []) {
 
 		render.Clear();
 
+		while (SDL_PollEvent(&event))
+			if (event.type == SDL_QUIT)
+				isRunning = false;
+
 		// Bütün çizdirme kodu bu aralýkta olmalý
 		rayCasting.DrawPixels(render);
-
 		render.Update();
+
+		oldTime = time;
+		time = SDL_GetTicks();
+		double frameTime = (time - oldTime) / 1000.0;
+		rayCasting.ListenKeys(frameTime);
 		fps_last = fps_first;
 	}
 

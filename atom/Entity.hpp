@@ -9,6 +9,8 @@ public:
 
 	Vector2D getPos();
 	void setPos(Vector2D pos);
+	void addPosX(double x);
+	void addPosY(double y);
 
 	Vector2D getDir();
 	void setDir(Vector2D dir);

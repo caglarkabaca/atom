@@ -6,6 +6,8 @@ Entity::Entity(Vector2D pos, Vector2D dir, Vector2D plane): pos(pos), dir(dir), 
 
 Vector2D Entity::getPos() { return pos; }
 void Entity::setPos(Vector2D p) { pos.x = p.x; pos.y = p.y; }
+void Entity::addPosX(double x) { pos.x += x; }
+void Entity::addPosY(double y) { pos.y += y; }
 
 Vector2D Entity::getDir() { return dir; }
 void Entity::setDir(Vector2D d) { dir.x = d.x; dir.y = d.y; }
