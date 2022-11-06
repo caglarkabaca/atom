@@ -25,7 +25,10 @@ int map[20][20] = {
 };
 
 Map::Map() {
-	
+}
+
+Map::~Map() {
+
 }
 
 void Map::LoadMap(int array[20][20]) {

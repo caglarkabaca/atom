@@ -11,5 +11,4 @@ public:
 
 private:
 	int map[20][20];
-
 };

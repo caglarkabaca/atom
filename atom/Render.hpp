@@ -27,6 +27,8 @@ public:
 	void DrawRect(int x, int y, int w, int h, SDL_Color color);
 	void DrawRectOutline(int x, int y, int w, int h, SDL_Color color);
 
+	void DrawLine(int x1, int y1, int x2, int y2, SDL_Color color);
+
 private:
 	SDL_Window* win;
 	SDL_Renderer* renderer;

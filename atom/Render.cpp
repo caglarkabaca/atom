@@ -58,3 +58,8 @@ void Render::DrawRectOutline(int x, int y, int w, int h, SDL_Color color) {
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawRect(renderer, &r);
 }
+
+void Render::DrawLine(int x1, int y1, int x2, int y2, SDL_Color color) {
+	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+	SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+}

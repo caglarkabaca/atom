@@ -154,12 +154,15 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Map.cpp" />
+    <ClCompile Include="Raycasting.cpp" />
     <ClCompile Include="Render.cpp" />
     <ClCompile Include="TextureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Entity.hpp" />
     <ClInclude Include="Include\SDL_image.h" />
     <ClInclude Include="Include\SDL\SDL_image.h" />
     <ClInclude Include="Include\SDL_ttf.h" />
@@ -252,7 +255,9 @@
     <ClInclude Include="Include\SDL\SDL_video.h" />
     <ClInclude Include="Include\SDL\SDL_vulkan.h" />
     <ClInclude Include="Map.hpp" />
+    <ClInclude Include="Raycasting.hpp" />
     <ClInclude Include="Render.hpp" />
+    <ClInclude Include="Structs.hpp" />
     <ClInclude Include="TextureManager.hpp" />
   </ItemGroup>
   <ItemGroup>

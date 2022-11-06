@@ -9,5 +9,10 @@
   C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\SDL2_ttf.dll
   C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\zlib1.dll
          10 file(s) copied.
-  TextureManager.cpp
+  Raycasting.cpp
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(121,31): warning C4244: '*=': conversion from 'double' to 'Uint8', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(121,48): warning C4244: '*=': conversion from 'double' to 'Uint8', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(121,64): warning C4244: '=': conversion from 'double' to 'Uint8', possible loss of data
+  main.cpp
+  Generating Code...
   atom.vcxproj -> C:\Users\kabac\OneDrive\Masaüstü\atom\x64\Debug\atom.exe
