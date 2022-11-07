@@ -1,6 +1,8 @@
 #include "Raycasting.hpp"
-
 #include <iostream>
+
+#define MOVESPEED_MULTIPLER 5.0
+#define ROTSPEED_MULTIPLER 3.0
 
 Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY):
 	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL) {
@@ -116,7 +118,6 @@ void Raycasting::DrawPixels(Render& render) {
 		case 4:  color = {255, 255, 255, 255};  break; //white
 		default: color = {255, 255, 0, 255}; break; //yellow
 		}
-
 		//give x and y sides different brightness
 		if (side == 1) { color.r *= 0.25; color.g *= 0.25; color.b *= 0.25; };
 
@@ -127,11 +128,118 @@ void Raycasting::DrawPixels(Render& render) {
 
 }
 
+void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** textureArray) {
+
+	Vector2D pos = entity->getPos(), dir = entity->getDir(), plane = entity->getPlane();
+
+	for (int x = 0; x < screenWidth; x++) {
+
+		// ray pos and raydir
+		double cameraX = 2 * x / double(screenWidth) - 1; // x in camera space
+		Vector2D rayDir{ dir.x + plane.x * cameraX, dir.y + plane.y * cameraX };
+
+		// mapin hangi bloðundayýz
+		Vector2DI Vmap{ int(pos.x), int(pos.y) };
+
+		// length of ray from current position to next x or y-side
+		Vector2D sideDist{};
+
+		//length of ray from one x or y-side to next x or y-side
+		Vector2D deltaDist = { (rayDir.x == 0) ? 1e30 : std::abs(1 / rayDir.x), (rayDir.y == 0) ? 1e30 : std::abs(1 / rayDir.y) };
+		double perpWallDist;
+
+		//what direction to step in x or y-direction (either +1 or -1)
+		Vector2DI step{};
+
+		int hit = 0; //was there a wall hit?
+		int side{}; //was a NS or a EW wall hit?
+
+		//calculate step and initial sideDist
+		if (rayDir.x < 0) {
+			step.x = -1;
+			sideDist.x = (pos.x - Vmap.x) * deltaDist.x;
+		}
+		else {
+			step.x = 1;
+			sideDist.x = (Vmap.x + 1.0 - pos.x) * deltaDist.x;
+		}
+
+		if (rayDir.y < 0) {
+			step.y = -1;
+			sideDist.y = (pos.y - Vmap.y) * deltaDist.y;
+		}
+		else {
+			step.y = 1;
+			sideDist.y = (Vmap.y + 1.0 - pos.y) * deltaDist.y;
+		}
+
+		//perform DDA
+		while (hit == 0)
+		{
+			//jump to next map square, either in x-direction, or in y-direction
+			if (sideDist.x < sideDist.y)
+			{
+				sideDist.x += deltaDist.x;
+				Vmap.x += step.x;
+				side = 0;
+			}
+			else
+			{
+				sideDist.y += deltaDist.y;
+				Vmap.y += step.y;
+				side = 1;
+			}
+			//Check if ray has hit a wall
+			if (map[Vmap.x][Vmap.y] > 0) hit = 1;
+		}
+
+		//Calculate distance projected on camera direction (Euclidean distance would give fisheye effect!)
+		if (side == 0) perpWallDist = (sideDist.x - deltaDist.x);
+		else          perpWallDist = (sideDist.y - deltaDist.y);
+
+		//Calculate height of line to draw on screen
+		int lineHeight = (int)(screenHeight / perpWallDist);
+
+		//calculate lowest and highest pixel to fill in current stripe
+		int drawStart = -lineHeight / 2 + screenHeight / 2;
+		if (drawStart < 0)drawStart = 0;
+		int drawEnd = lineHeight / 2 + screenHeight / 2;
+		if (drawEnd >= screenHeight)drawEnd = screenHeight - 1;
+
+		// texture calc
+		int txtNum = map[Vmap.x][Vmap.y] - 1;
+
+		// calculate value of wallX
+		double wallX{};
+		if (side == 0)
+			wallX = pos.y + perpWallDist * rayDir.y;
+		else
+			wallX = pos.x + perpWallDist * rayDir.x;
+		wallX -= floor(wallX);
+
+		//x coordinate on the texture
+		// 64 textureWidth
+		int texX = int(wallX * 64);
+		if (side == 0 && rayDir.x > 0) texX = 64 - texX - 1;
+		if (side == 1 && rayDir.y < 0) texX = 64 - texX - 1;
+
+		// How much to increase the texture coordinate per screen pixel
+		double txtStep = 1.0 * 64 / lineHeight;
+		// Starting texture coordinate
+		int texPos = (drawStart - screenHeight / 2 + lineHeight / 2) * txtStep;
+		SDL_Rect src{texX, texPos, 1, texPos + (drawEnd - drawStart) * txtStep};
+		SDL_Rect dst{x, drawStart, 1, drawEnd - drawStart};
+		txtManager.Draw(textureArray[txtNum], src, dst);
+
+	}
+
+}
+
 void Raycasting::ListenKeys(double frameTime) {
 
 	Vector2D pos = entity->getPos(), dir = entity->getDir(), plane = entity->getPlane();
 	//speed modifiers
-	double moveSpeed = frameTime * 5.0; //the constant value is in squares/second
+	double moveSpeed = frameTime * MOVESPEED_MULTIPLER; //the constant value is in squares/second
 
 	const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
@@ -162,7 +270,7 @@ void Raycasting::ListenKeys(double frameTime) {
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0) {
 		if (e.type == SDL_MOUSEMOTION) {
-			double rotSpeed = frameTime * 3.0 * abs(e.motion.xrel); //the constant value is in radians/second
+			double rotSpeed = frameTime * ROTSPEED_MULTIPLER * abs(e.motion.xrel); //the constant value is in radians/second
 			//rotate to the right
 			if (e.motion.xrel > 0)
 			{

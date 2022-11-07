@@ -8,10 +8,14 @@ Render::Render(const char* title, int width, int height):
 	
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		std::cout << "SDL INIT ERROR (Render.cpp): " << SDL_GetError() << std::endl;
+
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	
+	// SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN); // geliþtirme sürecinde kapalý kalsýn
+	// isFullscreen = true;
+
 	if (win == NULL)
 		std::cout << "CreateWindow Error (Render.cpp): " << SDL_GetError() << std::endl;
 
@@ -36,6 +40,11 @@ void Render::Clear() {
 
 void Render::Update() {
 	SDL_RenderPresent(renderer);
+}
+
+void Render::ToggleFullscreen() {
+	SDL_SetWindowFullscreen(win, !isFullscreen);
+	isFullscreen = !isFullscreen;
 }
 
 // getter

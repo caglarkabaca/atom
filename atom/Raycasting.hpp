@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include "Render.hpp"
+#include "TextureManager.hpp"
 #include "Entity.hpp"
 
 class Raycasting
@@ -11,6 +12,7 @@ public:
 
 	void SetEntity(Entity* entity);
 	void DrawPixels(Render& render);
+	void DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** textureArray);
 	void ListenKeys(double frameTime);
 private:
 	int screenWidth, screenHeight;

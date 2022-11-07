@@ -18,6 +18,8 @@ public:
 	void Clear();
 	void Update();
 
+	void ToggleFullscreen();
+
 	// getter | static biraz sýkýntý bu da ayný þekilde bi sýkýntýsý olabilir 
 	//			sonuçta pointer yoluyoruz, geçici böyle çözelim
 	SDL_Renderer* getRenderer();
@@ -34,5 +36,6 @@ private:
 	SDL_Renderer* renderer;
 	const char* title;
 	int width, height;
+	bool isFullscreen = false;
 };
 

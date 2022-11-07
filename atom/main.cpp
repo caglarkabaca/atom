@@ -7,7 +7,7 @@
 #include "Entity.hpp"
 
 #define WIDTH	1366
-#define HEIGHT	768 //typo
+#define HEIGHT	768
 #define TITLE	"Title"
 
 #define FPS		144
@@ -15,6 +15,7 @@
 int main(int, char* []) {
 
 	Render render(TITLE, WIDTH, HEIGHT);
+	TextureManager txtManager(render);
 
 	int map[24][24] = {
 	  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -46,6 +47,15 @@ int main(int, char* []) {
 	Raycasting rayCasting(WIDTH, HEIGHT, (int*)map, 24, 24);
 	Entity player({22, 12}, {-1, 0}, {0, 0.66});
 
+	int sizeArrayTexture = 5;
+	SDL_Texture** textureArray = new SDL_Texture* [sizeArrayTexture];
+
+	textureArray[0] = txtManager.LoadTexture("assets/pics/colorstone.png");
+	textureArray[1] = txtManager.LoadTexture("assets/pics/bluestone.png");
+	textureArray[2] = txtManager.LoadTexture("assets/pics/greystone.png");
+	textureArray[3] = txtManager.LoadTexture("assets/pics/mossy.png");
+	textureArray[4] = txtManager.LoadTexture("assets/pics/redbrick.png");
+
 	rayCasting.SetEntity(&player);
 
 	double oldTime = 0, time = 0;
@@ -63,12 +73,22 @@ int main(int, char* []) {
 
 		render.Clear();
 
-		while (SDL_PollEvent(&event))
+		// q => quit
+		// f => toggle fullscreen
+		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT)
 				isRunning = false;
+			if (event.type == SDL_KEYDOWN)
+				if (event.key.keysym.scancode == SDL_SCANCODE_Q)
+					isRunning = false;
+			if (event.type == SDL_KEYDOWN)
+				if (event.key.keysym.scancode == SDL_SCANCODE_F)
+					render.ToggleFullscreen();
+		}
 
 		// Bütün çizdirme kodu bu aralýkta olmalý
-		rayCasting.DrawPixels(render);
+		//rayCasting.DrawPixels(render);
+		rayCasting.DrawPixelsTextured(txtManager, textureArray);
 		render.Update();
 
 		oldTime = time;
@@ -77,6 +97,14 @@ int main(int, char* []) {
 		rayCasting.ListenKeys(frameTime);
 		fps_last = fps_first;
 	}
+
+
+	// free texture datas
+	for (int i = 0; i < sizeArrayTexture; i++) {
+		SDL_DestroyTexture(textureArray[i]);
+		textureArray[i] = NULL;
+	}
+	delete[] textureArray;
 
 	// otomatik render.~Render() çaðýrýyor, gerek yok yazmaya
 	// render.~Render();
