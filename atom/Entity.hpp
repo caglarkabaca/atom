@@ -5,7 +5,7 @@
 class Entity
 {
 public:
-	Entity(Vector2D pos, Vector2D dir, Vector2D plane);
+	Entity(Vector2D pos, double angle);
 
 	Vector2D getPos();
 	void setPos(Vector2D pos);
@@ -15,10 +15,12 @@ public:
 	Vector2D getDir();
 	void setDir(Vector2D dir);
 
-	Vector2D getPlane();
-	void setPlane(Vector2D plane);
+	double getAngle();
+	void setAngle(double angle);
 
+	double shear = 0;
 private:
-	Vector2D pos, dir, plane;
+	Vector2D pos, dir;
+	double angle;
 };
 

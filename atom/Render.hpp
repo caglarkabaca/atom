@@ -31,11 +31,11 @@ public:
 
 	void DrawLine(int x1, int y1, int x2, int y2, SDL_Color color);
 
+	int width, height;
 private:
 	SDL_Window* win;
 	SDL_Renderer* renderer;
 	const char* title;
-	int width, height;
 	bool isFullscreen = false;
 };
 

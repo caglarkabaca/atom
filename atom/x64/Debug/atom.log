@@ -9,5 +9,16 @@
   C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\SDL2_ttf.dll
   C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Lib\x64\zlib1.dll
          10 file(s) copied.
-  main.cpp
+  Raycasting.cpp
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(174,30): warning C4244: '*=': conversion from 'double' to 'Uint8', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(174,47): warning C4244: '*=': conversion from 'double' to 'Uint8', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(174,64): warning C4244: '*=': conversion from 'double' to 'Uint8', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(176,32): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(176,22): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(328,10): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(329,10): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(332,20): warning C4838: conversion from 'double' to 'int' requires a narrowing conversion
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(332,20): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(332,30): warning C4838: conversion from 'double' to 'int' requires a narrowing conversion
+C:\Users\kabac\OneDrive\Masaüstü\atom\atom\Raycasting.cpp(332,30): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
   atom.vcxproj -> C:\Users\kabac\OneDrive\Masaüstü\atom\x64\Debug\atom.exe

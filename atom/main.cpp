@@ -6,8 +6,10 @@
 #include "Raycasting.hpp"
 #include "Entity.hpp"
 
-#define WIDTH	1366
-#define HEIGHT	768
+#include <iostream>
+
+#define WIDTH	1280
+#define HEIGHT	720
 #define TITLE	"Title"
 
 #define FPS		144
@@ -44,19 +46,26 @@ int main(int, char* []) {
 	  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 	};
 
-	Raycasting rayCasting(WIDTH, HEIGHT, (int*)map, 24, 24);
-	Entity player({22, 12}, {-1, 0}, {0, 0.66});
+	int gridSize = 128;
 
-	int sizeArrayTexture = 5;
+	Raycasting rayCasting(WIDTH, HEIGHT, (int*)map, 24, 24, gridSize);
+
+	double FOV = 64;
+	Vector2D pos = { 22 * gridSize, 12 * gridSize };
+	double angle = M_PI;
+
+	Entity player(pos, angle);
+	rayCasting.SetEntity(&player);
+
+	int sizeArrayTexture = 6;
 	SDL_Texture** textureArray = new SDL_Texture* [sizeArrayTexture];
 
-	textureArray[0] = txtManager.LoadTexture("assets/pics/colorstone.png");
-	textureArray[1] = txtManager.LoadTexture("assets/pics/bluestone.png");
-	textureArray[2] = txtManager.LoadTexture("assets/pics/greystone.png");
-	textureArray[3] = txtManager.LoadTexture("assets/pics/mossy.png");
-	textureArray[4] = txtManager.LoadTexture("assets/pics/redbrick.png");
-
-	rayCasting.SetEntity(&player);
+	textureArray[0] = NULL;
+	textureArray[1] = txtManager.LoadTexture("assets/pics/512.png");
+	textureArray[2] = txtManager.LoadTexture("assets/pics/512.png");
+	textureArray[3] = txtManager.LoadTexture("assets/pics/512.png");
+	textureArray[4] = txtManager.LoadTexture("assets/pics/512.png");
+	textureArray[5] = txtManager.LoadTexture("assets/pics/512.png");
 
 	double oldTime = 0, time = 0;
 
@@ -87,8 +96,10 @@ int main(int, char* []) {
 		}
 
 		// Bütün çizdirme kodu bu aralýkta olmalý
-		//rayCasting.DrawPixels(render);
-		rayCasting.DrawPixelsTextured(txtManager, textureArray);
+		// 
+		//rayCasting.DrawPixels(render, FOV);
+		rayCasting.DrawPixelsTextured(txtManager, textureArray, 512, FOV);
+
 		render.Update();
 
 		oldTime = time;

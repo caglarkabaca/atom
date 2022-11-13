@@ -1,11 +1,13 @@
 #include "Raycasting.hpp"
 #include <iostream>
 
-#define MOVESPEED_MULTIPLER 5.0
-#define ROTSPEED_MULTIPLER 3.0
+#define MOVESPEED_MULTIPLER 500.0
+#define ROTSPEED_MULTIPLER 10
+#define UPDOWN_OFFSET 0.33
+#define MOVE_OFFSET 5 // duvarýn içine girmeyi engellemek için
 
-Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY):
-	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL) {
+Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize):
+	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL), gridSize(gridSize) {
 
 	// memory allociton
 	this->map = new int* [mapX];
@@ -30,206 +32,311 @@ Raycasting::~Raycasting() {
 
 void Raycasting::SetEntity(Entity* entity) { this->entity = entity; }
 
-void Raycasting::DrawPixels(Render& render) {
+void Raycasting::DrawPixels(Render& render, double FOV) {
 
-	Vector2D pos = entity->getPos(), dir = entity->getDir(), plane = entity->getPlane();
+	Vector2D pos{ entity->getPos() }, dir{ entity->getDir() };
+	double angle = entity->getAngle();
 
-	for (int x = 0; x < screenWidth; x++) {
+	double DR = 0.0174533;
+	const double sizeOfColumn = screenWidth / FOV;
 
-		// ray pos and raydir
-		double cameraX = 2 * x / double(screenWidth) - 1; // x in camera space
-		Vector2D rayDir{ dir.x + plane.x * cameraX, dir.y + plane.y * cameraX };
+	// bunlar map classýnda olucak
+	int mapSize = 24;
+	int gridSize = 128;
 
-		// mapin hangi bloðundayýz
-		Vector2DI Vmap{ int(pos.x), int(pos.y) };
+	// cast the rays
+	double rx{}, ry{}, ra{}, xo{}, yo{};
+	ra = angle - DR * FOV / 2;
 
-		// length of ray from current position to next x or y-side
-		Vector2D sideDist{};
+	if (ra < 0)
+		ra += 2 * M_PI;
+	if (ra > 2 * M_PI)
+		ra -= 2 * M_PI;
 
-		//length of ray from one x or y-side to next x or y-side
-		Vector2D deltaDist = { (rayDir.x == 0) ? 1e30 : std::abs(1 / rayDir.x), (rayDir.y == 0) ? 1e30 : std::abs(1 / rayDir.y) };
-		double perpWallDist;
+	for (int i = 0; i < screenWidth; i++) {
+		double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
+		double hx{ pos.x }, hy{ pos.y };
+		double vx{ pos.x }, vy{ pos.y };
+		int dof = 0;
+		// horizontal
+		
+		dof = 0;
+		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+		else {
+			double aTan = -1 / tan(ra);
+			if (ra > M_PI) {
+				ry = ((int)pos.y / gridSize) * gridSize - 0.00000001;
+				rx = (pos.y - ry) * aTan + pos.x;
+				yo = -gridSize;
+				xo = -yo * aTan;
+			}
+			if (ra < M_PI) {
+				ry = ((int)pos.y / gridSize) * gridSize + gridSize;
+				rx = (pos.y - ry) * aTan + pos.x;
+				yo = gridSize;
+				xo = -yo * aTan;
+			}
+		}
 
-		//what direction to step in x or y-direction (either +1 or -1)
-		Vector2DI step{};
+		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+			int mx{(int) rx / gridSize}, my{(int) ry / gridSize};
+			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
+				dof = mapSize;
+				distV = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+				vx = rx;
+				vy = ry;
+			}
+			else {
+				rx += xo;
+				ry += yo;
+				dof++;
+			}
+		}
 
-		int hit = 0; //was there a wall hit?
-		int side{}; //was a NS or a EW wall hit?
+		// vertical
+		dof = 0;
+		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+		else {
+			double nTan = -tan(ra);
+			if (ra > M_PI / 2 && ra < 3 * M_PI / 2) {
+				rx = ((int)pos.x / gridSize) * gridSize - 0.00000001;
+				ry = (pos.x - rx) * nTan + pos.y;
+				xo = -gridSize;
+				yo = -xo * nTan;
+			}
+			if (ra < M_PI / 2 || ra > 3 * M_PI / 2) {
+				rx = ((int)pos.x / gridSize) * gridSize + gridSize;
+				ry = (pos.x - rx) * nTan + pos.y;
+				xo = gridSize;
+				yo = -xo * nTan;
+			}
+		}
 
-		//calculate step and initial sideDist
-		if (rayDir.x < 0) {
-			step.x = -1;
-			sideDist.x = (pos.x - Vmap.x) * deltaDist.x;
+		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+			int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
+			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
+				dof = mapSize;
+				distH = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+				hx = rx;
+				hy = ry;
+			}
+			else {
+				rx += xo;
+				ry += yo;
+				dof++;
+			}
+		}
+
+		bool darkness = false;
+		int mx, my;
+
+		//dist
+		double dist{};
+		if (distV < distH) {
+			dist = distV;
+			mx = (int) vx / gridSize;
+			my = (int) vy / gridSize;
+			darkness = true;
 		}
 		else {
-			step.x = 1;
-			sideDist.x = (Vmap.x + 1.0 - pos.x) * deltaDist.x;
+			dist = distH;
+			mx = (int) hx / gridSize;
+			my = (int) hy / gridSize;
 		}
 
-		if (rayDir.y < 0) {
-			step.y = -1;
-			sideDist.y = (pos.y - Vmap.y) * deltaDist.y;
-		}
-		else {
-			step.y = 1;
-			sideDist.y = (Vmap.y + 1.0 - pos.y) * deltaDist.y;
-		}
+		// bulunan kare (mx, my)
+		// tam kordinat için (hx, hy) ve (vx, vy) yi karþýlaþtýrýp dist i küçük olaný alýcaz
+		// mesafe dist
 
-		//perform DDA
-		while (hit == 0)
+		// eðer minimapte ray i göstermek istiyorsak buraya ekleyebiliriz
+
+		// fix fisheye
+		double ca = angle - ra;
+		if (ca < 0)
+			ca -= 2 * M_PI;
+		dist *= cos(ca);
+
+		double lineH = (gridSize * screenHeight) / dist;
+		if (lineH > screenHeight)
+			lineH = screenHeight;
+		double lineO = screenHeight / 2 - lineH / 2;
+
+		SDL_Color color;
+		switch (map[my][mx])
 		{
-			//jump to next map square, either in x-direction, or in y-direction
-			if (sideDist.x < sideDist.y)
-			{
-				sideDist.x += deltaDist.x;
-				Vmap.x += step.x;
-				side = 0;
-			}
-			else
-			{
-				sideDist.y += deltaDist.y;
-				Vmap.y += step.y;
-				side = 1;
-			}
-			//Check if ray has hit a wall
-			if (map[Vmap.x][Vmap.y] > 0) hit = 1;
+		case 1:  color = { 255, 0, 0, 255 };  break; //red
+		case 2:  color = { 0, 255, 0, 255 };  break; //green
+		case 3:  color = { 0, 0, 255, 255 };   break; //blue
+		case 4:  color = { 255, 255, 255, 255 };  break; //white
+		default: color = { 255, 255, 0, 255 }; break; //yellow
 		}
 
-		//Calculate distance projected on camera direction (Euclidean distance would give fisheye effect!)
-		if (side == 0) perpWallDist = (sideDist.x - deltaDist.x);
-		else          perpWallDist = (sideDist.y - deltaDist.y);
+		if (darkness) { color.r *= 0.25; color.g *= 0.25; color.b *= 0.25; };
 
-		//Calculate height of line to draw on screen
-		int lineHeight = (int)(screenHeight / perpWallDist);
+		render.DrawRect(i, lineO, 1, lineH, color);
 
-		//calculate lowest and highest pixel to fill in current stripe
-		int drawStart = -lineHeight / 2 + screenHeight / 2;
-		if (drawStart < 0)drawStart = 0;
-		int drawEnd = lineHeight / 2 + screenHeight / 2;
-		if (drawEnd >= screenHeight)drawEnd = screenHeight - 1;
-
-		//choose wall color
-		SDL_Color color{};
-		switch (map[Vmap.x][Vmap.y])
-		{
-		case 1:  color = {255, 0, 0, 255};  break; //red
-		case 2:  color = {0, 255, 0, 255};  break; //green
-		case 3:  color = {0, 0, 255, 255};   break; //blue
-		case 4:  color = {255, 255, 255, 255};  break; //white
-		default: color = {255, 255, 0, 255}; break; //yellow
-		}
-		//give x and y sides different brightness
-		if (side == 1) { color.r *= 0.25; color.g *= 0.25; color.b *= 0.25; };
-
-		//verLine(x, drawStart, drawEnd, color);
-		render.DrawLine(x, drawStart, x, drawEnd, color);
+		ra += DR * FOV / screenWidth;
+		if (ra < 0)
+			ra += 2 * M_PI;
+		if (ra > 2 * M_PI)
+			ra -= 2 * M_PI;
 
 	}
 
 }
 
-void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** textureArray) {
+void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth, double FOV) {
 
-	Vector2D pos = entity->getPos(), dir = entity->getDir(), plane = entity->getPlane();
+	Vector2D pos{ entity->getPos() }, dir{ entity->getDir() };
+	double angle = entity->getAngle();
 
-	for (int x = 0; x < screenWidth; x++) {
+	double DR = 0.0174533;
+	const double sizeOfColumn = screenWidth / FOV;
 
-		// ray pos and raydir
-		double cameraX = 2 * x / double(screenWidth) - 1; // x in camera space
-		Vector2D rayDir{ dir.x + plane.x * cameraX, dir.y + plane.y * cameraX };
+	// bunlar map classýnda olucak
+	int mapSize = 24;
+	int gridSize = 128;
 
-		// mapin hangi bloðundayýz
-		Vector2DI Vmap{ int(pos.x), int(pos.y) };
+	// cast the rays
+	double rx{}, ry{}, ra{}, xo{}, yo{};
+	ra = angle - DR * FOV / 2;
 
-		// length of ray from current position to next x or y-side
-		Vector2D sideDist{};
+	if (ra < 0)
+		ra += 2 * M_PI;
+	if (ra > 2 * M_PI)
+		ra -= 2 * M_PI;
 
-		//length of ray from one x or y-side to next x or y-side
-		Vector2D deltaDist = { (rayDir.x == 0) ? 1e30 : std::abs(1 / rayDir.x), (rayDir.y == 0) ? 1e30 : std::abs(1 / rayDir.y) };
-		double perpWallDist;
+	for (int i = 0; i < screenWidth; i++) {
+		double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
+		double hx{ pos.x }, hy{ pos.y };
+		double vx{ pos.x }, vy{ pos.y };
+		int dof = 0;
+		// horizontal
 
-		//what direction to step in x or y-direction (either +1 or -1)
-		Vector2DI step{};
+		dof = 0;
+		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+		else {
+			double aTan = -1 / tan(ra);
+			if (ra > M_PI) {
+				ry = ((int)pos.y / gridSize) * gridSize - 0.00000001;
+				rx = (pos.y - ry) * aTan + pos.x;
+				yo = -gridSize;
+				xo = -yo * aTan;
+			}
+			if (ra < M_PI) {
+				ry = ((int)pos.y / gridSize) * gridSize + gridSize;
+				rx = (pos.y - ry) * aTan + pos.x;
+				yo = gridSize;
+				xo = -yo * aTan;
+			}
+		}
 
-		int hit = 0; //was there a wall hit?
-		int side{}; //was a NS or a EW wall hit?
+		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+			int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
+			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
+				dof = mapSize;
 
-		//calculate step and initial sideDist
-		if (rayDir.x < 0) {
-			step.x = -1;
-			sideDist.x = (pos.x - Vmap.x) * deltaDist.x;
+				vx = rx;
+				vy = ry;
+				distV = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+			}
+			else {
+				rx += xo;
+				ry += yo;
+				dof++;
+			}
+		}
+
+		// vertical
+		dof = 0;
+		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+		else {
+			double nTan = -tan(ra);
+			if (ra > M_PI / 2 && ra < 3 * M_PI / 2) {
+				rx = ((int)pos.x / gridSize) * gridSize - 0.00000001;
+				ry = (pos.x - rx) * nTan + pos.y;
+				xo = -gridSize;
+				yo = -xo * nTan;
+			}
+			if (ra < M_PI / 2 || ra > 3 * M_PI / 2) {
+				rx = ((int)pos.x / gridSize) * gridSize + gridSize;
+				ry = (pos.x - rx) * nTan + pos.y;
+				xo = gridSize;
+				yo = -xo * nTan;
+			}
+		}
+
+		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+			int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
+			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
+				dof = mapSize;
+		
+				hx = rx;
+				hy = ry;
+				distH = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+			}
+			else {
+				rx += xo;
+				ry += yo;
+				dof++;
+			}
+		}
+
+		bool darkness = false;
+		int mx, my;
+
+		//dist
+		double dist{};
+		if (distV < distH) {
+			dist = distV;
+			mx = (int)vx / gridSize;
+			my = (int)vy / gridSize;
+			darkness = true;
 		}
 		else {
-			step.x = 1;
-			sideDist.x = (Vmap.x + 1.0 - pos.x) * deltaDist.x;
+			dist = distH;
+			mx = (int)hx / gridSize;
+			my = (int)hy / gridSize;
 		}
 
-		if (rayDir.y < 0) {
-			step.y = -1;
-			sideDist.y = (pos.y - Vmap.y) * deltaDist.y;
-		}
-		else {
-			step.y = 1;
-			sideDist.y = (Vmap.y + 1.0 - pos.y) * deltaDist.y;
-		}
+		// bulunan kare (mx, my)
+		// tam kordinat için (hx, hy) ve (vx, vy) yi karþýlaþtýrýp dist i küçük olaný alýcaz
+		// mesafe dist
 
-		//perform DDA
-		while (hit == 0)
-		{
-			//jump to next map square, either in x-direction, or in y-direction
-			if (sideDist.x < sideDist.y)
-			{
-				sideDist.x += deltaDist.x;
-				Vmap.x += step.x;
-				side = 0;
-			}
-			else
-			{
-				sideDist.y += deltaDist.y;
-				Vmap.y += step.y;
-				side = 1;
-			}
-			//Check if ray has hit a wall
-			if (map[Vmap.x][Vmap.y] > 0) hit = 1;
-		}
+		// eðer minimapte ray i göstermek istiyorsak buraya ekleyebiliriz
 
-		//Calculate distance projected on camera direction (Euclidean distance would give fisheye effect!)
-		if (side == 0) perpWallDist = (sideDist.x - deltaDist.x);
-		else          perpWallDist = (sideDist.y - deltaDist.y);
+		// fix fisheye
+		double ca = angle - ra;
+		if (ca < 0)
+			ca -= 2 * M_PI;
+		dist *= cos(ca);
 
-		//Calculate height of line to draw on screen
-		int lineHeight = (int)(screenHeight / perpWallDist);
+		double lineH = (gridSize * screenHeight) / dist;
+		if (lineH > screenHeight)
+			lineH = screenHeight;
+		double lineO = screenHeight / 2 - lineH / 2;
 
-		//calculate lowest and highest pixel to fill in current stripe
-		int drawStart = -lineHeight / 2 + screenHeight / 2;
-		if (drawStart < 0)drawStart = 0;
-		int drawEnd = lineHeight / 2 + screenHeight / 2;
-		if (drawEnd >= screenHeight)drawEnd = screenHeight - 1;
-
-		// texture calc
-		int txtNum = map[Vmap.x][Vmap.y] - 1;
-
-		// calculate value of wallX
 		double wallX{};
-		if (side == 0)
-			wallX = pos.y + perpWallDist * rayDir.y;
-		else
-			wallX = pos.x + perpWallDist * rayDir.x;
-		wallX -= floor(wallX);
+		if (distV < distH) {
+			wallX = vx - (mx * gridSize);
+		}
+		else {
+			wallX = hy - (my * gridSize);
+		}
 
-		//x coordinate on the texture
-		// 64 textureWidth
-		int texX = int(wallX * 64);
-		if (side == 0 && rayDir.x > 0) texX = 64 - texX - 1;
-		if (side == 1 && rayDir.y < 0) texX = 64 - texX - 1;
+		int tx = (int) (wallX * textureWidth / gridSize);
+		int ty = lineO * textureWidth / screenHeight;
+		int th = lineH * textureWidth / screenHeight;
 
-		// How much to increase the texture coordinate per screen pixel
-		double txtStep = 1.0 * 64 / lineHeight;
-		// Starting texture coordinate
-		int texPos = (drawStart - screenHeight / 2 + lineHeight / 2) * txtStep;
-		SDL_Rect src{texX, texPos, 1, texPos + (drawEnd - drawStart) * txtStep};
-		SDL_Rect dst{x, drawStart, 1, drawEnd - drawStart};
-		txtManager.Draw(textureArray[txtNum], src, dst);
+		SDL_Rect src{ tx, 0, 1, textureWidth };
+		SDL_Rect dst{ i, lineO, 1, lineH };
+		txtManager.Draw(textureArray[map[my][mx]], src, dst);
+
+		ra += DR * FOV / screenWidth;
+		if (ra < 0)
+			ra += 2 * M_PI;
+		if (ra > 2 * M_PI)
+			ra -= 2 * M_PI;
 
 	}
 
@@ -237,34 +344,67 @@ void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** te
 
 void Raycasting::ListenKeys(double frameTime) {
 
-	Vector2D pos = entity->getPos(), dir = entity->getDir(), plane = entity->getPlane();
+	Vector2D pos = entity->getPos(), dir = entity->getDir();
+	double angle = entity->getAngle();
 	//speed modifiers
 	double moveSpeed = frameTime * MOVESPEED_MULTIPLER; //the constant value is in squares/second
 
 	const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
+	int xo{MOVE_OFFSET}, yo{MOVE_OFFSET};
+	
+	if (dir.x < 0)
+		xo = -xo;
+
+	if (dir.y < 0)
+		yo = -yo;
+
 	//move forward if no wall in front of you
-	if (currentKeyStates[SDL_SCANCODE_W])
-	{
-		if (map[int(pos.x + dir.x * moveSpeed)][int(pos.y)] == false) entity->addPosX(dir.x * moveSpeed);
-		if (map[int(pos.x)][int(pos.y + dir.y * moveSpeed)] == false) entity->addPosY(dir.y * moveSpeed);
+	if (currentKeyStates[SDL_SCANCODE_W]) {
+		if (map[(int)(pos.y + yo) / gridSize ][(int)(pos.x + dir.x * moveSpeed + xo) / gridSize ] == 0) {
+			entity->addPosX(dir.x * moveSpeed);
+		}
+		if (map[(int)(pos.y + dir.y * moveSpeed + yo) / gridSize][(int)(pos.x + xo) / gridSize] == 0) {
+			entity->addPosY(dir.y * moveSpeed);
+		}
 	}
 	//move backwards if no wall behind you
-	if (currentKeyStates[SDL_SCANCODE_S])
-	{
-		if (map[int(pos.x - dir.x * moveSpeed)][int(pos.y)] == false) entity->addPosX(-1 * dir.x * moveSpeed);
-		if (map[int(pos.x)][int(pos.y - dir.y * moveSpeed)] == false) entity->addPosY(-1 * dir.y * moveSpeed);
+	if (currentKeyStates[SDL_SCANCODE_S]) {
+		if (map[(int)(pos.y - yo) / gridSize][(int)(pos.x - dir.x * moveSpeed - xo) / gridSize] == 0) {
+			entity->addPosX(-dir.x * moveSpeed);
+		}
+		if (map[(int)(pos.y - dir.y * moveSpeed - yo) / gridSize][(int)(pos.x - xo) / gridSize] == 0) {
+			entity->addPosY(-dir.y * moveSpeed);
+		}
 	}
 
-	if (currentKeyStates[SDL_SCANCODE_A])
-	{
-		if (map[int(pos.x - dir.y * moveSpeed)][int(pos.y)] == false) entity->addPosX(-1 * dir.y * moveSpeed);
-		if (map[int(pos.x)][int(pos.y + dir.x * moveSpeed)] == false) entity->addPosY(dir.x * moveSpeed);
+	if (currentKeyStates[SDL_SCANCODE_D]) {
+		/*if (map[(int)(pos.y + dir.x * moveSpeed - MOVE_OFFSET) / gridSize][(int)(pos.x - dir.y * moveSpeed + MOVE_OFFSET) / gridSize] == 0) {
+			entity->addPosX(-dir.y * moveSpeed);
+			entity->addPosY(dir.x * moveSpeed);
+		}*/
+
+		if (map[(int)(pos.y + dir.x * moveSpeed + xo) / gridSize][(int)(pos.x - yo) / gridSize] == 0) {
+			entity->addPosY(+dir.x * moveSpeed);
+		}
+		if (map[(int)(pos.y + xo) / gridSize][(int)(pos.x - dir.y * moveSpeed - yo) / gridSize] == 0) {
+			entity->addPosX(-dir.y * moveSpeed);
+		}
 	}
-	if (currentKeyStates[SDL_SCANCODE_D])
-	{
-		if (map[int(pos.x + dir.y * moveSpeed)][int(pos.y)] == false) entity->addPosX(dir.y * moveSpeed);
-		if (map[int(pos.x)][int(pos.y - dir.x * moveSpeed)] == false) entity->addPosY(-1 * dir.x * moveSpeed);
+
+	if (currentKeyStates[SDL_SCANCODE_A]) {
+		/*if (map[(int)(pos.y - dir.x * moveSpeed + MOVE_OFFSET) / gridSize][(int)(pos.x + dir.y * moveSpeed - MOVE_OFFSET) / gridSize] == 0) {
+			entity->addPosX(+dir.y * moveSpeed);
+			entity->addPosY(-dir.x * moveSpeed);
+		}*/
+
+		if (map[(int)(pos.y - dir.x * moveSpeed - xo) / gridSize][(int)(pos.x + yo) / gridSize] == 0) {
+			entity->addPosY(-dir.x * moveSpeed);
+		}
+		if (map[(int)(pos.y - xo) / gridSize][(int)(pos.x + dir.y * moveSpeed + yo) / gridSize] == 0) {
+			entity->addPosX(+dir.y * moveSpeed);
+		}
+
 	}
 
 	SDL_Event e;
@@ -272,31 +412,26 @@ void Raycasting::ListenKeys(double frameTime) {
 		if (e.type == SDL_MOUSEMOTION) {
 			double rotSpeed = frameTime * ROTSPEED_MULTIPLER * abs(e.motion.xrel); //the constant value is in radians/second
 			//rotate to the right
-			if (e.motion.xrel > 0)
-			{
-				//both camera direction and camera plane must be rotated
-				double oldDirX = dir.x;
-				dir.x = dir.x * cos(-rotSpeed) - dir.y * sin(-rotSpeed);
-				dir.y = oldDirX * sin(-rotSpeed) + dir.y * cos(-rotSpeed);
-				double oldPlaneX = plane.x;
-				plane.x = plane.x * cos(-rotSpeed) - plane.y * sin(-rotSpeed);
-				plane.y = oldPlaneX * sin(-rotSpeed) + plane.y * cos(-rotSpeed);
+			if (e.motion.xrel > 0) {
+				angle += rotSpeed * 0.1;
+				if (angle > 2 * M_PI)
+					entity->setAngle(angle - 2 * M_PI);
+				else
+					entity->setAngle(angle);
+				dir = { cos(angle), sin(angle) };
 				entity->setDir(dir);
-				entity->setPlane(plane);
 			}
 			//rotate to the left
-			if (e.motion.xrel < 0)
-			{
-				//both camera direction and camera plane must be rotated
-				double oldDirX = dir.x;
-				dir.x = dir.x * cos(rotSpeed) - dir.y * sin(rotSpeed);
-				dir.y = oldDirX * sin(rotSpeed) + dir.y * cos(rotSpeed);
-				double oldPlaneX = plane.x;
-				plane.x = plane.x * cos(rotSpeed) - plane.y * sin(rotSpeed);
-				plane.y = oldPlaneX * sin(rotSpeed) + plane.y * cos(rotSpeed);
+			if (e.motion.xrel < 0) {
+				angle -= rotSpeed * 0.1;
+				if (angle < 0)
+					entity->setAngle(angle + 2 * M_PI);
+				else
+					entity->setAngle(angle);
+				dir = { cos(angle), sin(angle) };
 				entity->setDir(dir);
-				entity->setPlane(plane);
 			}
 		}
 	}
+
 }
