@@ -3,11 +3,102 @@
 
 #define MOVESPEED_MULTIPLER 500.0
 #define ROTSPEED_MULTIPLER 10
-#define UPDOWN_OFFSET 0.33
+#define UPDOWN_OFFSET M_PI / 8
 #define MOVE_OFFSET 5 // duvarýn içine girmeyi engellemek için
 
-Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize):
-	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL), gridSize(gridSize) {
+// posdan belirli açýya ýþýn yollar ve ýþýný izler
+// ýþýnýn duvara çarptýðý yerde kordinatýný verir
+Vector2D castTheRay(double ra, Vector2D pos, int mapSize, int gridSize, int** map, int& side) {
+	double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
+	double hx{ pos.x }, hy{ pos.y };
+	double vx{ pos.x }, vy{ pos.y };
+	int dof = 0;
+	// horizontal
+
+	double rx{}, ry{}, xo{}, yo{};
+
+	dof = 0;
+	if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+	else {
+		double aTan = -1 / tan(ra);
+		if (ra > M_PI) {
+			ry = ((int)pos.y / gridSize) * gridSize - 0.00000001;
+			rx = (pos.y - ry) * aTan + pos.x;
+			yo = -gridSize;
+			xo = -yo * aTan;
+		}
+		if (ra < M_PI) {
+			ry = ((int)pos.y / gridSize) * gridSize + gridSize;
+			rx = (pos.y - ry) * aTan + pos.x;
+			yo = gridSize;
+			xo = -yo * aTan;
+		}
+	}
+
+	while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+		int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
+		if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
+			dof = mapSize;
+
+			vx = rx;
+			vy = ry;
+			distV = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+		}
+		else {
+			rx += xo;
+			ry += yo;
+			dof++;
+		}
+	}
+
+	// vertical
+	dof = 0;
+	if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+	else {
+		double nTan = -tan(ra);
+		if (ra > M_PI / 2 && ra < 3 * M_PI / 2) {
+			rx = ((int)pos.x / gridSize) * gridSize - 0.00000001;
+			ry = (pos.x - rx) * nTan + pos.y;
+			xo = -gridSize;
+			yo = -xo * nTan;
+		}
+		if (ra < M_PI / 2 || ra > 3 * M_PI / 2) {
+			rx = ((int)pos.x / gridSize) * gridSize + gridSize;
+			ry = (pos.x - rx) * nTan + pos.y;
+			xo = gridSize;
+			yo = -xo * nTan;
+		}
+	}
+
+	while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+		int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
+		if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
+			dof = mapSize;
+
+			hx = rx;
+			hy = ry;
+			distH = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+		}
+		else {
+			rx += xo;
+			ry += yo;
+			dof++;
+		}
+	}
+
+	if (distV < distH) {
+		side = 0;
+		return { vx, vy };
+	}
+	else {
+		side = 1;
+		return { hx, hy };
+	}
+
+}
+
+Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize, double FOV):
+	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL), gridSize(gridSize), FOV(FOV) {
 
 	// memory allociton
 	this->map = new int* [mapX];
@@ -32,17 +123,18 @@ Raycasting::~Raycasting() {
 
 void Raycasting::SetEntity(Entity* entity) { this->entity = entity; }
 
-void Raycasting::DrawPixels(Render& render, double FOV) {
+void Raycasting::DrawPixels(Render& render) {
 
 	Vector2D pos{ entity->getPos() }, dir{ entity->getDir() };
 	double angle = entity->getAngle();
+	double shear = entity->getShear();
 
 	double DR = 0.0174533;
 	const double sizeOfColumn = screenWidth / FOV;
 
 	// bunlar map classýnda olucak
-	int mapSize = 24;
-	int gridSize = 128;
+	int mapSize = mapY;
+	// BURASI DEÐÝÞMESÝ LAZIM ÞUAN SADECE KARE MAPLER ÇALIÞIYOR
 
 	// cast the rays
 	double rx{}, ry{}, ra{}, xo{}, yo{};
@@ -54,95 +146,10 @@ void Raycasting::DrawPixels(Render& render, double FOV) {
 		ra -= 2 * M_PI;
 
 	for (int i = 0; i < screenWidth; i++) {
-		double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
-		double hx{ pos.x }, hy{ pos.y };
-		double vx{ pos.x }, vy{ pos.y };
-		int dof = 0;
-		// horizontal
-		
-		dof = 0;
-		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
-		else {
-			double aTan = -1 / tan(ra);
-			if (ra > M_PI) {
-				ry = ((int)pos.y / gridSize) * gridSize - 0.00000001;
-				rx = (pos.y - ry) * aTan + pos.x;
-				yo = -gridSize;
-				xo = -yo * aTan;
-			}
-			if (ra < M_PI) {
-				ry = ((int)pos.y / gridSize) * gridSize + gridSize;
-				rx = (pos.y - ry) * aTan + pos.x;
-				yo = gridSize;
-				xo = -yo * aTan;
-			}
-		}
-
-		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
-			int mx{(int) rx / gridSize}, my{(int) ry / gridSize};
-			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
-				dof = mapSize;
-				distV = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
-				vx = rx;
-				vy = ry;
-			}
-			else {
-				rx += xo;
-				ry += yo;
-				dof++;
-			}
-		}
-
-		// vertical
-		dof = 0;
-		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
-		else {
-			double nTan = -tan(ra);
-			if (ra > M_PI / 2 && ra < 3 * M_PI / 2) {
-				rx = ((int)pos.x / gridSize) * gridSize - 0.00000001;
-				ry = (pos.x - rx) * nTan + pos.y;
-				xo = -gridSize;
-				yo = -xo * nTan;
-			}
-			if (ra < M_PI / 2 || ra > 3 * M_PI / 2) {
-				rx = ((int)pos.x / gridSize) * gridSize + gridSize;
-				ry = (pos.x - rx) * nTan + pos.y;
-				xo = gridSize;
-				yo = -xo * nTan;
-			}
-		}
-
-		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
-			int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
-			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
-				dof = mapSize;
-				distH = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
-				hx = rx;
-				hy = ry;
-			}
-			else {
-				rx += xo;
-				ry += yo;
-				dof++;
-			}
-		}
-
-		bool darkness = false;
-		int mx, my;
-
-		//dist
-		double dist{};
-		if (distV < distH) {
-			dist = distV;
-			mx = (int) vx / gridSize;
-			my = (int) vy / gridSize;
-			darkness = true;
-		}
-		else {
-			dist = distH;
-			mx = (int) hx / gridSize;
-			my = (int) hy / gridSize;
-		}
+		int side = 0;
+		Vector2D ray = castTheRay(ra, pos, mapSize, gridSize, map, side);
+		int mx{ (int)ray.x / gridSize }, my{ (int)ray.y / gridSize };
+		double dist{ sqrt(((ray.x - pos.x) * (ray.x - pos.x) + (ray.y - pos.y) * (ray.y - pos.y))) };
 
 		// bulunan kare (mx, my)
 		// tam kordinat için (hx, hy) ve (vx, vy) yi karþýlaþtýrýp dist i küçük olaný alýcaz
@@ -157,9 +164,13 @@ void Raycasting::DrawPixels(Render& render, double FOV) {
 		dist *= cos(ca);
 
 		double lineH = (gridSize * screenHeight) / dist;
-		if (lineH > screenHeight)
-			lineH = screenHeight;
+		/*if (lineH > screenHeight)
+			lineH = screenHeight;*/
 		double lineO = screenHeight / 2 - lineH / 2;
+
+		// up down movement
+		double offset = tan(shear) * screenHeight;
+		lineO += offset;
 
 		SDL_Color color;
 		switch (map[my][mx])
@@ -171,7 +182,7 @@ void Raycasting::DrawPixels(Render& render, double FOV) {
 		default: color = { 255, 255, 0, 255 }; break; //yellow
 		}
 
-		if (darkness) { color.r *= 0.25; color.g *= 0.25; color.b *= 0.25; };
+		if (side == 1) { color.r *= 0.25; color.g *= 0.25; color.b *= 0.25; };
 
 		render.DrawRect(i, lineO, 1, lineH, color);
 
@@ -185,17 +196,18 @@ void Raycasting::DrawPixels(Render& render, double FOV) {
 
 }
 
-void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth, double FOV) {
+void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth) {
 
 	Vector2D pos{ entity->getPos() }, dir{ entity->getDir() };
 	double angle = entity->getAngle();
+	double shear = entity->getShear();
 
 	double DR = 0.0174533;
 	const double sizeOfColumn = screenWidth / FOV;
 
 	// bunlar map classýnda olucak
-	int mapSize = 24;
-	int gridSize = 128;
+	int mapSize = mapY;
+	// BURASI DEÐÝÞMESÝ LAZIM ÞUAN SADECE KARE MAPLER ÇALIÞIYOR
 
 	// cast the rays
 	double rx{}, ry{}, ra{}, xo{}, yo{};
@@ -207,97 +219,10 @@ void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** te
 		ra -= 2 * M_PI;
 
 	for (int i = 0; i < screenWidth; i++) {
-		double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
-		double hx{ pos.x }, hy{ pos.y };
-		double vx{ pos.x }, vy{ pos.y };
-		int dof = 0;
-		// horizontal
-
-		dof = 0;
-		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
-		else {
-			double aTan = -1 / tan(ra);
-			if (ra > M_PI) {
-				ry = ((int)pos.y / gridSize) * gridSize - 0.00000001;
-				rx = (pos.y - ry) * aTan + pos.x;
-				yo = -gridSize;
-				xo = -yo * aTan;
-			}
-			if (ra < M_PI) {
-				ry = ((int)pos.y / gridSize) * gridSize + gridSize;
-				rx = (pos.y - ry) * aTan + pos.x;
-				yo = gridSize;
-				xo = -yo * aTan;
-			}
-		}
-
-		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
-			int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
-			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
-				dof = mapSize;
-
-				vx = rx;
-				vy = ry;
-				distV = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
-			}
-			else {
-				rx += xo;
-				ry += yo;
-				dof++;
-			}
-		}
-
-		// vertical
-		dof = 0;
-		if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
-		else {
-			double nTan = -tan(ra);
-			if (ra > M_PI / 2 && ra < 3 * M_PI / 2) {
-				rx = ((int)pos.x / gridSize) * gridSize - 0.00000001;
-				ry = (pos.x - rx) * nTan + pos.y;
-				xo = -gridSize;
-				yo = -xo * nTan;
-			}
-			if (ra < M_PI / 2 || ra > 3 * M_PI / 2) {
-				rx = ((int)pos.x / gridSize) * gridSize + gridSize;
-				ry = (pos.x - rx) * nTan + pos.y;
-				xo = gridSize;
-				yo = -xo * nTan;
-			}
-		}
-
-		while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
-			int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
-			if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
-				dof = mapSize;
-		
-				hx = rx;
-				hy = ry;
-				distH = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
-			}
-			else {
-				rx += xo;
-				ry += yo;
-				dof++;
-			}
-		}
-
-		bool darkness = false;
-		int mx, my;
-
-		//dist
-		double dist{};
-		if (distV < distH) {
-			dist = distV;
-			mx = (int)vx / gridSize;
-			my = (int)vy / gridSize;
-			darkness = true;
-		}
-		else {
-			dist = distH;
-			mx = (int)hx / gridSize;
-			my = (int)hy / gridSize;
-		}
+		int side = 0;
+		Vector2D ray = castTheRay(ra, pos, mapSize, gridSize, map, side);
+		int mx{ (int)ray.x / gridSize }, my{ (int)ray.y / gridSize };
+		double dist{ sqrt(((ray.x - pos.x) * (ray.x - pos.x) + (ray.y - pos.y) * (ray.y - pos.y)))};
 
 		// bulunan kare (mx, my)
 		// tam kordinat için (hx, hy) ve (vx, vy) yi karþýlaþtýrýp dist i küçük olaný alýcaz
@@ -312,16 +237,20 @@ void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** te
 		dist *= cos(ca);
 
 		double lineH = (gridSize * screenHeight) / dist;
-		if (lineH > screenHeight)
-			lineH = screenHeight;
+		//if (lineH > screenHeight) // yukarý aþaðý için kapattým
+		//	lineH = screenHeight;
 		double lineO = screenHeight / 2 - lineH / 2;
 
+		// up down movement
+		double offset = tan(shear) * screenHeight;
+		lineO += offset;
+
 		double wallX{};
-		if (distV < distH) {
-			wallX = vx - (mx * gridSize);
+		if (side == 0) {
+			wallX = ray.x - (mx * gridSize);
 		}
 		else {
-			wallX = hy - (my * gridSize);
+			wallX = ray.y - (my * gridSize);
 		}
 
 		int tx = (int) (wallX * textureWidth / gridSize);
@@ -346,6 +275,7 @@ void Raycasting::ListenKeys(double frameTime) {
 
 	Vector2D pos = entity->getPos(), dir = entity->getDir();
 	double angle = entity->getAngle();
+	double shear = entity->getShear();
 	//speed modifiers
 	double moveSpeed = frameTime * MOVESPEED_MULTIPLER; //the constant value is in squares/second
 
@@ -411,6 +341,7 @@ void Raycasting::ListenKeys(double frameTime) {
 	while (SDL_PollEvent(&e) != 0) {
 		if (e.type == SDL_MOUSEMOTION) {
 			double rotSpeed = frameTime * ROTSPEED_MULTIPLER * abs(e.motion.xrel); //the constant value is in radians/second
+			double rotSpeedY = frameTime * ROTSPEED_MULTIPLER * abs(e.motion.yrel); //the constant value is in radians/second
 			//rotate to the right
 			if (e.motion.xrel > 0) {
 				angle += rotSpeed * 0.1;
@@ -430,6 +361,22 @@ void Raycasting::ListenKeys(double frameTime) {
 					entity->setAngle(angle);
 				dir = { cos(angle), sin(angle) };
 				entity->setDir(dir);
+			}
+
+			if (e.motion.yrel > 0) {
+				shear -= rotSpeedY * 0.1;
+				if (shear < -UPDOWN_OFFSET)
+					entity->setShear(-UPDOWN_OFFSET);
+				else
+					entity->setShear(shear);
+			}
+
+			if (e.motion.yrel < 0) {
+				shear += rotSpeedY * 0.1;
+				if (shear > UPDOWN_OFFSET)
+					entity->setShear(UPDOWN_OFFSET);
+				else
+					entity->setShear(shear);
 			}
 		}
 	}

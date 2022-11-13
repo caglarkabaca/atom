@@ -48,13 +48,12 @@ int main(int, char* []) {
 
 	int gridSize = 128;
 
-	Raycasting rayCasting(WIDTH, HEIGHT, (int*)map, 24, 24, gridSize);
-
 	double FOV = 64;
 	Vector2D pos = { 22 * gridSize, 12 * gridSize };
 	double angle = M_PI;
 
 	Entity player(pos, angle);
+	Raycasting rayCasting(WIDTH, HEIGHT, (int*)map, 24, 24, gridSize, FOV);
 	rayCasting.SetEntity(&player);
 
 	int sizeArrayTexture = 6;
@@ -96,9 +95,14 @@ int main(int, char* []) {
 		}
 
 		// Bütün çizdirme kodu bu aralýkta olmalý
-		// 
-		//rayCasting.DrawPixels(render, FOV);
-		rayCasting.DrawPixelsTextured(txtManager, textureArray, 512, FOV);
+
+		// bg
+		double offset = tan(player.getShear()) * HEIGHT;
+		render.DrawRect(0, 0, WIDTH, HEIGHT, { 200, 200, 200, 255 });			// tavan
+		render.DrawRect(0, HEIGHT / 2 + offset, WIDTH, HEIGHT / 2 - offset, { 45, 45, 45, 255 }); // zemin
+
+		//rayCasting.DrawPixels(render);
+		rayCasting.DrawPixelsTextured(txtManager, textureArray, 512);
 
 		render.Update();
 

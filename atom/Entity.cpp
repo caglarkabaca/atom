@@ -14,3 +14,6 @@ void Entity::setDir(Vector2D d) { dir.x = d.x; dir.y = d.y; }
 
 double Entity::getAngle() { return angle; }
 void Entity::setAngle(double angle) { this->angle = angle; }
+
+double Entity::getShear() { return shear; }
+void Entity::setShear(double shear) { this->shear = shear; }

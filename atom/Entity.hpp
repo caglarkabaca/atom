@@ -18,9 +18,12 @@ public:
 	double getAngle();
 	void setAngle(double angle);
 
-	double shear = 0;
+	double getShear();
+	void setShear(double shear);
+
 private:
 	Vector2D pos, dir;
-	double angle;
+	double angle = 0;
+	double shear = 0;
 };
 
