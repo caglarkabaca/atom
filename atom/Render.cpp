@@ -3,7 +3,7 @@
 #include <iostream>
 
 Render::Render(const char* title, int width, int height): 
-	// renderer static olduðu için aþaðýdan sildim. Umarým sýkýntý olmaz.
+
 	win(NULL), renderer(NULL), title(title), width(width), height(height) /* bu constructor çaðrýldýðýnda otmatik olarak class attributýný tanýmlýyor*/ { 
 	
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)

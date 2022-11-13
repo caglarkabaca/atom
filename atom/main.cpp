@@ -5,7 +5,7 @@
 #include "TextureManager.hpp"
 #include "Raycasting.hpp"
 #include "Entity.hpp"
-
+#include "Map.hpp"
 #include <iostream>
 
 #define WIDTH	1280
@@ -15,7 +15,7 @@
 #define FPS		144
 
 int main(int, char* []) {
-
+	Map minimap;
 	Render render(TITLE, WIDTH, HEIGHT);
 	TextureManager txtManager(render);
 
@@ -95,6 +95,7 @@ int main(int, char* []) {
 		}
 
 		// Bütün çizdirme kodu bu aralýkta olmalý
+		
 
 		// bg
 		double offset = tan(player.getShear()) * HEIGHT;
@@ -103,6 +104,10 @@ int main(int, char* []) {
 
 		//rayCasting.DrawPixels(render);
 		rayCasting.DrawPixelsTextured(txtManager, textureArray, 512);
+
+		//Minimap
+		minimap.DrawMap(&render, map);
+		minimap.DrawPlayer(&render, player.getPos().x, player.getPos().y);
 
 		render.Update();
 
