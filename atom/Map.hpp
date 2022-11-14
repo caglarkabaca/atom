@@ -1,4 +1,6 @@
 #pragma once
+#include "Render.hpp"
+#include "TextureManager.hpp"
 
 class Map {
 
@@ -6,9 +8,8 @@ public:
 	Map();
 	~Map();
 
-	void LoadMap(int array[20][20]);
-	void DrawMap();
-
+	void DrawMap(Render* renderer, int map[24][24]);
+	void DrawPlayer(Render* renderer, double playerX, double playerY);
 private:
-	int map[20][20];
+
 };

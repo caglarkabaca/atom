@@ -192,7 +192,7 @@ Vector2D castTheRayFloorCeiling(double ra, Vector2D pos, int mapSize, int gridSi
 Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize, double FOV):
 	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL), gridSize(gridSize), FOV(FOV) {
 
-	// memory allociton
+	// memory allocation
 	this->map = new int* [mapX];
 	for (int i = 0; i < mapX; i++) {
 		this->map[i] = new int[mapY];
