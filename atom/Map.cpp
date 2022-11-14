@@ -1,50 +1,45 @@
 #include "Map.hpp"
 // Haritayý yükleme ve çizme
 
-int map[20][20] = {
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-};
-
 Map::Map() {
+}
+
+Map::~Map() {
+
+}
+
+void Map::DrawMap(Render* renderer, int map[24][24]) {
+	renderer->DrawRectOutline(1280 - 288, 720 - 288, 288, 288, { 0,0,0 });
+	int type = 0;
+	for (int y = 24; y >=0; y--) {
+		for (int x = 0; x < 24; x++) {
+			type = map[y][x];
+			switch (type) {
+			case 1:
+				renderer->DrawRect(1280 - 288 + x * 12, 720 - 288 + y * 12, 12, 12, { 190, 190, 190, 255});
+				break;
+			case 2:
+				renderer->DrawRect(1280 - 288 + x * 12, 720 - 288 + y * 12, 12, 12, { 0, 0, 255, 255});
+				break;
+			case 3:
+				renderer->DrawRect(1280 - 288 + x * 12, 720 - 288 + y * 12, 12, 12, { 255, 255, 255 , 255});
+				break;
+			case 4:
+				renderer->DrawRect(1280 - 288 + x * 12, 720 - 288 + y * 12, 12, 12, { 255, 255, 0 , 255});
+				break;
+			case 5:
+				renderer->DrawRect(1280 - 288 + x * 12, 720 - 288 + y * 12, 12, 12, { 255, 0, 0 , 255});
+				break;
+			default:
+				renderer->DrawRect(1280 - 288 + x * 12, 720 - 288 + y * 12, 12, 12, { 0, 0, 0 , 255});
+				break;
+			}
+		}
+	}
 	
 }
 
-void Map::LoadMap(int array[20][20]) {
-	for (int row = 0; row < 20; row++) {
-		for (int column = 0; column < 25; column++) {
-			map[row][column] = array[row][column];
-			
-		}
-	}
-}
+void Map::DrawPlayer(Render* renderer, double playerX, double playerY) {
 
-// Daha sonrasýnda Map'e texture ekleyebilmek için ayýrýldý. Þu anlýk iþlevsiz
-void Map::DrawMap() {
-	int type = 0;
-	for (int row = 0; row < 20; row++) {
-		for (int column = 0; column < 25; column++) {
-
-			type = map[row][column]; // ileride type'a bir int atayýp switch case ile 0 ise kýrmýzý blok, 1 ise mavi blok þeklinde yapabiliriz.
-			
-		}
-	}
+	renderer->DrawRect(1280 - 288 + playerX * 12 / 128, 720 - 288 + playerY * 12 / 128, 12, 12, { 0, 255, 0 , 255});
 }

@@ -1,2 +1,6 @@
 .vs/
 .vs
+Debug/
+x64/
+atom/Debug
+atom/x64/

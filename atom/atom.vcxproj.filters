@@ -28,19 +28,31 @@
     <Filter Include="Header Files\Include\SDL">
       <UniqueIdentifier>{17bb08b8-bf4f-4543-9692-b013b0dbc5fb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\cpp">
+      <UniqueIdentifier>{ae28b185-6c98-41cf-9b1c-92336c5d7410}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\h">
+      <UniqueIdentifier>{1fd01cdb-685a-4d44-8842-096710c2b769}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Map.cpp">
+      <Filter>Source Files\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="Raycasting.cpp">
+      <Filter>Source Files\cpp</Filter>
+    </ClCompile>
     <ClCompile Include="Render.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\cpp</Filter>
     </ClCompile>
     <ClCompile Include="TextureManager.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\cpp</Filter>
     </ClCompile>
-    <ClCompile Include="Map.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Source Files\cpp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -317,14 +329,23 @@
     <ClInclude Include="Include\SDL_image.h">
       <Filter>Header Files\Include</Filter>
     </ClInclude>
+    <ClInclude Include="Map.hpp">
+      <Filter>Header Files\h</Filter>
+    </ClInclude>
+    <ClInclude Include="Raycasting.hpp">
+      <Filter>Header Files\h</Filter>
+    </ClInclude>
     <ClInclude Include="Render.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\h</Filter>
     </ClInclude>
     <ClInclude Include="TextureManager.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\h</Filter>
     </ClInclude>
-    <ClInclude Include="Map.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Entity.hpp">
+      <Filter>Header Files\h</Filter>
+    </ClInclude>
+    <ClInclude Include="Structs.hpp">
+      <Filter>Header Files\h</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

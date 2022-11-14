@@ -3,14 +3,19 @@
 #include <iostream>
 
 Render::Render(const char* title, int width, int height): 
-	// renderer static olduðu için aþaðýdan sildim. Umarým sýkýntý olmaz.
+
 	win(NULL), renderer(NULL), title(title), width(width), height(height) /* bu constructor çaðrýldýðýnda otmatik olarak class attributýný tanýmlýyor*/ { 
 	
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		std::cout << "SDL INIT ERROR (Render.cpp): " << SDL_GetError() << std::endl;
 
+	SDL_SetRelativeMouseMode(SDL_TRUE);
+
 	win = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	
+	// SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN); // geliþtirme sürecinde kapalý kalsýn
+	// isFullscreen = true;
+
 	if (win == NULL)
 		std::cout << "CreateWindow Error (Render.cpp): " << SDL_GetError() << std::endl;
 
@@ -37,6 +42,11 @@ void Render::Update() {
 	SDL_RenderPresent(renderer);
 }
 
+void Render::ToggleFullscreen() {
+	SDL_SetWindowFullscreen(win, !isFullscreen);
+	isFullscreen = !isFullscreen;
+}
+
 // getter
 SDL_Renderer* Render::getRenderer() { return renderer; }
 SDL_Window* Render::getWindow() { return win; }
@@ -57,4 +67,9 @@ void Render::DrawRectOutline(int x, int y, int w, int h, SDL_Color color) {
 
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawRect(renderer, &r);
+}
+
+void Render::DrawLine(int x1, int y1, int x2, int y2, SDL_Color color) {
+	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+	SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
 }
