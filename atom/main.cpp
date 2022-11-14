@@ -8,6 +8,19 @@
 
 #include <iostream>
 
+// TEST
+#include <SDL/SDL_thread.h>
+
+int log(void* ent) {
+
+	double ra = 1;
+	while (ra > 0) {
+		ra = ((Entity*)ent)->getAngle();
+		std::cout << ra << std::endl;
+	}
+	return 0;
+}
+
 #define WIDTH	1280
 #define HEIGHT	720
 #define TITLE	"Title"
@@ -59,14 +72,17 @@ int main(int, char* []) {
 	int sizeArrayTexture = 6;
 	SDL_Texture** textureArray = new SDL_Texture* [sizeArrayTexture];
 
-	textureArray[0] = NULL;
-	textureArray[1] = txtManager.LoadTexture("assets/pics/512.png");
-	textureArray[2] = txtManager.LoadTexture("assets/pics/512.png");
-	textureArray[3] = txtManager.LoadTexture("assets/pics/512.png");
-	textureArray[4] = txtManager.LoadTexture("assets/pics/512.png");
-	textureArray[5] = txtManager.LoadTexture("assets/pics/512.png");
+	int txtSize = 256; // bilerek yarýsý fotoalar normalde 512
+	textureArray[0] = txtManager.LoadTexture("assets/gridbox/grey4.png"); // floor
+	textureArray[1] = txtManager.LoadTexture("assets/gridbox/blue3.png");
+	textureArray[2] = txtManager.LoadTexture("assets/gridbox/green2.png");
+	textureArray[3] = txtManager.LoadTexture("assets/gridbox/brown.png");
+	textureArray[4] = txtManager.LoadTexture("assets/gridbox/red.png");
+	textureArray[5] = txtManager.LoadTexture("assets/gridbox/yellow.png");
 
 	double oldTime = 0, time = 0;
+
+	SDL_Thread* logId = SDL_CreateThread(log, "testThread", &player);
 
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
@@ -102,7 +118,7 @@ int main(int, char* []) {
 		render.DrawRect(0, HEIGHT / 2 + offset, WIDTH, HEIGHT / 2 - offset, { 45, 45, 45, 255 }); // zemin
 
 		//rayCasting.DrawPixels(render);
-		rayCasting.DrawPixelsTextured(txtManager, textureArray, 512);
+		rayCasting.DrawPixelsTextured(txtManager, textureArray, txtSize);
 
 		render.Update();
 
@@ -113,6 +129,8 @@ int main(int, char* []) {
 		fps_last = fps_first;
 	}
 
+	player.setAngle(-1);
+	SDL_WaitThread(logId, NULL);
 
 	// free texture datas
 	for (int i = 0; i < sizeArrayTexture; i++) {

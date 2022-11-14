@@ -5,6 +5,7 @@
 #define ROTSPEED_MULTIPLER 10
 #define UPDOWN_OFFSET M_PI / 8
 #define MOVE_OFFSET 5 // duvarýn içine girmeyi engellemek için
+#define DEPTH_OFFSET 0.4 // 0 - 1 arasý deðerler, 1 komple aydýnlýk yapar
 
 // posdan belirli açýya ýþýn yollar ve ýþýný izler
 // ýþýnýn duvara çarptýðý yerde kordinatýný verir
@@ -73,6 +74,97 @@ Vector2D castTheRay(double ra, Vector2D pos, int mapSize, int gridSize, int** ma
 	while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
 		int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
 		if (mx < mapSize && my < mapSize && map[my][mx] > 0) {
+			dof = mapSize;
+
+			hx = rx;
+			hy = ry;
+			distH = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+		}
+		else {
+			rx += xo;
+			ry += yo;
+			dof++;
+		}
+	}
+
+	if (distV < distH) {
+		side = 0;
+		return { vx, vy };
+	}
+	else {
+		side = 1;
+		return { hx, hy };
+	}
+
+}
+
+// posdan belirli açýya ýþýn yollar ve ýþýný izler
+// ýþýnýn zeminin olan yerin yerde kordinatýný verir
+Vector2D castTheRayFloorCeiling(double ra, Vector2D pos, int mapSize, int gridSize, int** map, int& side) {
+	double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
+	double hx{ pos.x }, hy{ pos.y };
+	double vx{ pos.x }, vy{ pos.y };
+	int dof = 0;
+	// horizontal
+
+	double rx{}, ry{}, xo{}, yo{};
+
+	dof = 0;
+	if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+	else {
+		double aTan = -1 / tan(ra);
+		if (ra > M_PI) {
+			ry = ((int)pos.y / gridSize) * gridSize - 0.00000001;
+			rx = (pos.y - ry) * aTan + pos.x;
+			yo = -gridSize;
+			xo = -yo * aTan;
+		}
+		if (ra < M_PI) {
+			ry = ((int)pos.y / gridSize) * gridSize + gridSize;
+			rx = (pos.y - ry) * aTan + pos.x;
+			yo = gridSize;
+			xo = -yo * aTan;
+		}
+	}
+
+	while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+		int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
+		if (mx < mapSize && my < mapSize && map[my][mx] == 0) {
+			dof = mapSize;
+
+			vx = rx;
+			vy = ry;
+			distV = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
+		}
+		else {
+			rx += xo;
+			ry += yo;
+			dof++;
+		}
+	}
+
+	// vertical
+	dof = 0;
+	if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
+	else {
+		double nTan = -tan(ra);
+		if (ra > M_PI / 2 && ra < 3 * M_PI / 2) {
+			rx = ((int)pos.x / gridSize) * gridSize - 0.00000001;
+			ry = (pos.x - rx) * nTan + pos.y;
+			xo = -gridSize;
+			yo = -xo * nTan;
+		}
+		if (ra < M_PI / 2 || ra > 3 * M_PI / 2) {
+			rx = ((int)pos.x / gridSize) * gridSize + gridSize;
+			ry = (pos.x - rx) * nTan + pos.y;
+			xo = gridSize;
+			yo = -xo * nTan;
+		}
+	}
+
+	while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
+		int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
+		if (mx < mapSize && my < mapSize && map[my][mx] == 0) {
 			dof = mapSize;
 
 			hx = rx;
@@ -254,8 +346,20 @@ void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** te
 		}
 
 		int tx = (int) (wallX * textureWidth / gridSize);
-		int ty = lineO * textureWidth / screenHeight;
-		int th = lineH * textureWidth / screenHeight;
+
+
+		// ters texturelar düzeliyor
+		if (side == 0 && ra < M_PI)
+			tx = textureWidth - tx;
+
+		if (side == 1 && ra > M_PI / 2 && ra < 3 * M_PI / 2)
+			tx = textureWidth - tx;
+
+		// uzaklar daha karanlýk
+		double darkness = lineH / screenHeight + DEPTH_OFFSET;
+		if (darkness > 1)
+			darkness = 1;
+		SDL_SetTextureColorMod(textureArray[map[my][mx]], 255 * darkness, 255 * darkness, 255 * darkness);
 
 		SDL_Rect src{ tx, 0, 1, textureWidth };
 		SDL_Rect dst{ i, lineO, 1, lineH };
