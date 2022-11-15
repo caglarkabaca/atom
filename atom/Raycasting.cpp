@@ -1,23 +1,25 @@
 #include "Raycasting.hpp"
 #include <iostream>
 
-#define MOVESPEED_MULTIPLER 500.0
+#define MOVESPEED_MULTIPLER 250.0
 #define ROTSPEED_MULTIPLER 10
 #define UPDOWN_OFFSET M_PI / 8
 #define MOVE_OFFSET 5 // duvarýn içine girmeyi engellemek için
 #define DEPTH_OFFSET 0.4 // 0 - 1 arasý deðerler, 1 komple aydýnlýk yapar
 
+#define DR 0.0174533 // 1 degree to radian
+
 // posdan belirli açýya ýþýn yollar ve ýþýný izler
 // ýþýnýn duvara çarptýðý yerde kordinatýný verir
+// https://permadi.com/1996/05/ray-casting-tutorial-8/
 Vector2D castTheRay(double ra, Vector2D pos, int mapSize, int gridSize, int** map, int& side) {
 	double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
 	double hx{ pos.x }, hy{ pos.y };
 	double vx{ pos.x }, vy{ pos.y };
-	int dof = 0;
-	// horizontal
-
 	double rx{}, ry{}, xo{}, yo{};
+	int dof = 0;
 
+	// horizontal 
 	dof = 0;
 	if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
 	else {
@@ -87,97 +89,7 @@ Vector2D castTheRay(double ra, Vector2D pos, int mapSize, int gridSize, int** ma
 		}
 	}
 
-	if (distV < distH) {
-		side = 0;
-		return { vx, vy };
-	}
-	else {
-		side = 1;
-		return { hx, hy };
-	}
-
-}
-
-// posdan belirli açýya ýþýn yollar ve ýþýný izler
-// ýþýnýn zeminin olan yerin yerde kordinatýný verir
-Vector2D castTheRayFloorCeiling(double ra, Vector2D pos, int mapSize, int gridSize, int** map, int& side) {
-	double distH{ INT_MAX }, distV{ INT_MAX }; // placeholder 
-	double hx{ pos.x }, hy{ pos.y };
-	double vx{ pos.x }, vy{ pos.y };
-	int dof = 0;
-	// horizontal
-
-	double rx{}, ry{}, xo{}, yo{};
-
-	dof = 0;
-	if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
-	else {
-		double aTan = -1 / tan(ra);
-		if (ra > M_PI) {
-			ry = ((int)pos.y / gridSize) * gridSize - 0.00000001;
-			rx = (pos.y - ry) * aTan + pos.x;
-			yo = -gridSize;
-			xo = -yo * aTan;
-		}
-		if (ra < M_PI) {
-			ry = ((int)pos.y / gridSize) * gridSize + gridSize;
-			rx = (pos.y - ry) * aTan + pos.x;
-			yo = gridSize;
-			xo = -yo * aTan;
-		}
-	}
-
-	while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
-		int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
-		if (mx < mapSize && my < mapSize && map[my][mx] == 0) {
-			dof = mapSize;
-
-			vx = rx;
-			vy = ry;
-			distV = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
-		}
-		else {
-			rx += xo;
-			ry += yo;
-			dof++;
-		}
-	}
-
-	// vertical
-	dof = 0;
-	if (ra == 0 || ra == M_PI) { rx = pos.x; ry = pos.y; dof = mapSize; }
-	else {
-		double nTan = -tan(ra);
-		if (ra > M_PI / 2 && ra < 3 * M_PI / 2) {
-			rx = ((int)pos.x / gridSize) * gridSize - 0.00000001;
-			ry = (pos.x - rx) * nTan + pos.y;
-			xo = -gridSize;
-			yo = -xo * nTan;
-		}
-		if (ra < M_PI / 2 || ra > 3 * M_PI / 2) {
-			rx = ((int)pos.x / gridSize) * gridSize + gridSize;
-			ry = (pos.x - rx) * nTan + pos.y;
-			xo = gridSize;
-			yo = -xo * nTan;
-		}
-	}
-
-	while (dof < mapSize && rx >= 0 && ry >= 0 && rx <= mapSize * gridSize && ry <= mapSize * gridSize) {
-		int mx{ (int)rx / gridSize }, my{ (int)ry / gridSize };
-		if (mx < mapSize && my < mapSize && map[my][mx] == 0) {
-			dof = mapSize;
-
-			hx = rx;
-			hy = ry;
-			distH = sqrt(((rx - pos.x) * (rx - pos.x) + (ry - pos.y) * (ry - pos.y)));
-		}
-		else {
-			rx += xo;
-			ry += yo;
-			dof++;
-		}
-	}
-
+	// hangisi kýsaysa onu alýyoruz
 	if (distV < distH) {
 		side = 0;
 		return { vx, vy };
@@ -190,7 +102,12 @@ Vector2D castTheRayFloorCeiling(double ra, Vector2D pos, int mapSize, int gridSi
 }
 
 Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize, double FOV):
-	screenWidth(screenWidth), screenHeight(screenHeight), mapX(mapX), mapY(mapY), entity(NULL), gridSize(gridSize), FOV(FOV) {
+	screenWidth(screenWidth), screenHeight(screenHeight), 
+	mapX(mapX), mapY(mapY), entity(NULL), gridSize(gridSize), 
+	FOV(FOV), mapMaxGrid(mapX) {
+
+	if (mapY > mapX)
+		mapMaxGrid = mapY;
 
 	// memory allocation
 	this->map = new int* [mapX];
@@ -215,102 +132,34 @@ Raycasting::~Raycasting() {
 
 void Raycasting::SetEntity(Entity* entity) { this->entity = entity; }
 
-void Raycasting::DrawPixels(Render& render) {
+/*
+	RENDER
+	 Wall
+	 FloorCeiling
+*/
+
+void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth) {
 
 	Vector2D pos{ entity->getPos() }, dir{ entity->getDir() };
 	double angle = entity->getAngle();
 	double shear = entity->getShear();
 
-	double DR = 0.0174533;
 	const double sizeOfColumn = screenWidth / FOV;
+	double offset = tan(shear) * screenHeight;
 
-	// bunlar map classýnda olucak
-	int mapSize = mapY;
-	// BURASI DEÐÝÞMESÝ LAZIM ÞUAN SADECE KARE MAPLER ÇALIÞIYOR
+	int mapSize = mapMaxGrid;
 
 	// cast the rays
 	double rx{}, ry{}, ra{}, xo{}, yo{};
 	ra = angle - DR * FOV / 2;
-
 	if (ra < 0)
 		ra += 2 * M_PI;
 	if (ra > 2 * M_PI)
 		ra -= 2 * M_PI;
 
+	// wallcasting
 	for (int i = 0; i < screenWidth; i++) {
-		int side = 0;
-		Vector2D ray = castTheRay(ra, pos, mapSize, gridSize, map, side);
-		int mx{ (int)ray.x / gridSize }, my{ (int)ray.y / gridSize };
-		double dist{ sqrt(((ray.x - pos.x) * (ray.x - pos.x) + (ray.y - pos.y) * (ray.y - pos.y))) };
 
-		// bulunan kare (mx, my)
-		// tam kordinat için (hx, hy) ve (vx, vy) yi karþýlaþtýrýp dist i küçük olaný alýcaz
-		// mesafe dist
-
-		// eðer minimapte ray i göstermek istiyorsak buraya ekleyebiliriz
-
-		// fix fisheye
-		double ca = angle - ra;
-		if (ca < 0)
-			ca -= 2 * M_PI;
-		dist *= cos(ca);
-
-		double lineH = (gridSize * screenHeight) / dist;
-		/*if (lineH > screenHeight)
-			lineH = screenHeight;*/
-		double lineO = screenHeight / 2 - lineH / 2;
-
-		// up down movement
-		double offset = tan(shear) * screenHeight;
-		lineO += offset;
-
-		SDL_Color color;
-		switch (map[my][mx])
-		{
-		case 1:  color = { 255, 0, 0, 255 };  break; //red
-		case 2:  color = { 0, 255, 0, 255 };  break; //green
-		case 3:  color = { 0, 0, 255, 255 };   break; //blue
-		case 4:  color = { 255, 255, 255, 255 };  break; //white
-		default: color = { 255, 255, 0, 255 }; break; //yellow
-		}
-
-		if (side == 1) { color.r *= 0.25; color.g *= 0.25; color.b *= 0.25; };
-
-		render.DrawRect(i, lineO, 1, lineH, color);
-
-		ra += DR * FOV / screenWidth;
-		if (ra < 0)
-			ra += 2 * M_PI;
-		if (ra > 2 * M_PI)
-			ra -= 2 * M_PI;
-
-	}
-
-}
-
-void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth) {
-
-	Vector2D pos{ entity->getPos() }, dir{ entity->getDir() };
-	double angle = entity->getAngle();
-	double shear = entity->getShear();
-
-	double DR = 0.0174533;
-	const double sizeOfColumn = screenWidth / FOV;
-
-	// bunlar map classýnda olucak
-	int mapSize = mapY;
-	// BURASI DEÐÝÞMESÝ LAZIM ÞUAN SADECE KARE MAPLER ÇALIÞIYOR
-
-	// cast the rays
-	double rx{}, ry{}, ra{}, xo{}, yo{};
-	ra = angle - DR * FOV / 2;
-
-	if (ra < 0)
-		ra += 2 * M_PI;
-	if (ra > 2 * M_PI)
-		ra -= 2 * M_PI;
-
-	for (int i = 0; i < screenWidth; i++) {
 		int side = 0;
 		Vector2D ray = castTheRay(ra, pos, mapSize, gridSize, map, side);
 		int mx{ (int)ray.x / gridSize }, my{ (int)ray.y / gridSize };
@@ -334,19 +183,15 @@ void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** te
 		double lineO = screenHeight / 2 - lineH / 2;
 
 		// up down movement
-		double offset = tan(shear) * screenHeight;
 		lineO += offset;
 
 		double wallX{};
-		if (side == 0) {
+		if (side == 0) 
 			wallX = ray.x - (mx * gridSize);
-		}
-		else {
+		else 
 			wallX = ray.y - (my * gridSize);
-		}
 
 		int tx = (int) (wallX * textureWidth / gridSize);
-
 
 		// ters texturelar düzeliyor
 		if (side == 0 && ra < M_PI)
@@ -370,11 +215,83 @@ void Raycasting::DrawPixelsTextured(TextureManager& txtManager, SDL_Texture** te
 			ra += 2 * M_PI;
 		if (ra > 2 * M_PI)
 			ra -= 2 * M_PI;
-
 	}
+}
+
+void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, Atom::Surface& floor, Atom::Surface& ceiling, int textureWidth) {
+
+	// floor
+	Vector2D pos = entity->getPos();
+	double angle = entity->getAngle();
+	double ra = angle - DR * FOV / 2;
+	double offset = tan(entity->getShear()) * screenHeight;
+
+	Uint32* pixels = new Uint32[screenHeight * screenWidth];
+	Uint32* fpixels = (Uint32*)floor.pixels;
+	Uint32* cpixels = (Uint32*)ceiling.pixels;
+
+	if (ra < 0)
+		ra += 2 * M_PI;
+	if (ra > 2 * M_PI)
+		ra -= 2 * M_PI;
+
+	memset(pixels, 255, screenWidth * screenHeight * sizeof(Uint32));
+
+	for (int i = 0; i < screenWidth; i++) {
+		//floor
+
+		for (int j = screenHeight; j > screenHeight / 2 + offset; j--) {
+			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / cos(ra - angle);
+			double x = pos.x / gridSize - cos(ra) * n;
+			double y = pos.y / gridSize - sin(ra) * n;
+
+			int tx = (x - (int)x) * textureWidth;
+			int ty = (y - (int)y) * textureWidth;
+
+			if (tx < 0)
+				tx += textureWidth;
+			if (ty < 0)
+				ty += textureWidth;
+
+			int fpos = int(j - 1) * screenWidth + i;
+			pixels[fpos] = fpixels[ty * textureWidth + tx];
+
+		}
+
+		for (int j = 0; j < screenHeight / 2 + offset; j++) {
+			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / cos(ra - angle);
+			double x = pos.x / gridSize + cos(ra) * n;
+			double y = pos.y / gridSize + sin(ra) * n;
+
+			int tx = (x - (int)x) * textureWidth;
+			int ty = (y - (int)y) * textureWidth;
+
+			if (tx < 0)
+				tx += textureWidth;
+			if (ty < 0)
+				ty += textureWidth;
+
+			int cpos = int(j) * screenWidth + i;
+			pixels[cpos] = cpixels[ty * textureWidth + tx];
+
+		}
+
+		ra += DR * FOV / screenWidth;
+		if (ra < 0)
+			ra += 2 * M_PI;
+		if (ra > 2 * M_PI)
+			ra -= 2 * M_PI;
+	}
+
+	SDL_UpdateTexture(texture, NULL, pixels, screenWidth * sizeof(Uint32));
+	delete[] pixels;
+	txtManager.DrawP(texture, NULL, NULL);
 
 }
 
+/*
+	MOVE
+*/
 void Raycasting::ListenKeys(double frameTime) {
 
 	Vector2D pos = entity->getPos(), dir = entity->getDir();

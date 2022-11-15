@@ -159,6 +159,7 @@
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="Raycasting.cpp" />
     <ClCompile Include="Render.cpp" />
+    <ClCompile Include="Surface.cpp" />
     <ClCompile Include="TextureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -258,6 +259,7 @@
     <ClInclude Include="Raycasting.hpp" />
     <ClInclude Include="Render.hpp" />
     <ClInclude Include="Structs.hpp" />
+    <ClInclude Include="Surface.hpp" />
     <ClInclude Include="TextureManager.hpp" />
   </ItemGroup>
   <ItemGroup>

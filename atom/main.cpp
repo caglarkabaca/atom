@@ -8,18 +8,8 @@
 #include "Map.hpp"
 #include <iostream>
 
-// TEST
-#include <SDL/SDL_thread.h>
-
-int log(void* ent) {
-
-	double ra = 1;
-	while (ra > 0) {
-		ra = ((Entity*)ent)->getAngle();
-		std::cout << ra << std::endl;
-	}
-	return 0;
-}
+// ATOM
+#include "Surface.hpp"
 
 #define WIDTH	1280
 #define HEIGHT	720
@@ -70,19 +60,24 @@ int main(int, char* []) {
 	rayCasting.SetEntity(&player);
 
 	int sizeArrayTexture = 6;
-	SDL_Texture** textureArray = new SDL_Texture* [sizeArrayTexture];
+	SDL_Texture** textureArray = new SDL_Texture * [sizeArrayTexture];
 
-	int txtSize = 256; // bilerek yarýsý fotoalar normalde 512
-	textureArray[0] = txtManager.LoadTexture("assets/gridbox/grey4.png"); // floor
+	int txtSize = 256;
+	textureArray[0] = NULL; //null
 	textureArray[1] = txtManager.LoadTexture("assets/gridbox/blue3.png");
 	textureArray[2] = txtManager.LoadTexture("assets/gridbox/green2.png");
 	textureArray[3] = txtManager.LoadTexture("assets/gridbox/brown.png");
 	textureArray[4] = txtManager.LoadTexture("assets/gridbox/red.png");
 	textureArray[5] = txtManager.LoadTexture("assets/gridbox/yellow.png");
 
+
+	SDL_Texture* texture = SDL_CreateTexture(render.getRenderer(), 
+		SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
+	Atom::Surface floor("assets/gridbox/grey3.png");
+	Atom::Surface ceiling("assets/gridbox/orange.png");
+
 	double oldTime = 0, time = 0;
 
-	SDL_Thread* logId = SDL_CreateThread(log, "testThread", &player);
 
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
@@ -93,7 +88,7 @@ int main(int, char* []) {
 		fps_first = SDL_GetTicks();
 		delta = fps_first - fps_last;
 		if (delta <= 1000 / FPS)
-			continue;
+			SDL_Delay(1000 / FPS - delta);
 
 		render.Clear();
 
@@ -111,19 +106,17 @@ int main(int, char* []) {
 		}
 
 		// Bütün çizdirme kodu bu aralýkta olmalý
-		
 
 		// bg
 		double offset = tan(player.getShear()) * HEIGHT;
 		render.DrawRect(0, 0, WIDTH, HEIGHT, { 200, 200, 200, 255 });			// tavan
-		render.DrawRect(0, HEIGHT / 2 + offset, WIDTH, HEIGHT / 2 - offset, { 45, 45, 45, 255 }); // zemin
 
-		//rayCasting.DrawPixels(render);
-		rayCasting.DrawPixelsTextured(txtManager, textureArray, txtSize);
+		rayCasting.DrawFloorCeiling(txtManager, texture, floor, ceiling, txtSize);
+		rayCasting.DrawWalls(txtManager, textureArray, txtSize);
 
-		//Minimap
-		minimap.DrawMap(&render, map);
-		minimap.DrawPlayer(&render, player.getPos().x, player.getPos().y);
+		////Minimap
+		//minimap.DrawMap(&render, map);
+		//minimap.DrawPlayer(&render, player.getPos().x, player.getPos().y);
 
 		render.Update();
 
@@ -133,9 +126,6 @@ int main(int, char* []) {
 		rayCasting.ListenKeys(frameTime);
 		fps_last = fps_first;
 	}
-
-	player.setAngle(-1);
-	SDL_WaitThread(logId, NULL);
 
 	// free texture datas
 	for (int i = 0; i < sizeArrayTexture; i++) {

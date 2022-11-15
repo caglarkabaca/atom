@@ -34,6 +34,12 @@
     <Filter Include="Header Files\h">
       <UniqueIdentifier>{1fd01cdb-685a-4d44-8842-096710c2b769}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Atom">
+      <UniqueIdentifier>{8c193ab7-0bff-405b-ad5d-0d5221c2300b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Atom">
+      <UniqueIdentifier>{028404d6-b5a0-4e58-95c0-18a8319aaca3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -53,6 +59,9 @@
     </ClCompile>
     <ClCompile Include="Entity.cpp">
       <Filter>Source Files\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="Surface.cpp">
+      <Filter>Source Files\Atom</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -346,6 +355,9 @@
     </ClInclude>
     <ClInclude Include="Structs.hpp">
       <Filter>Header Files\h</Filter>
+    </ClInclude>
+    <ClInclude Include="Surface.hpp">
+      <Filter>Header Files\Atom</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
