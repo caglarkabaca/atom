@@ -227,18 +227,18 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 struct CalcStruct {
 	int screenHeight;
 	int screenWidth;
-	double offset;
+	float offset;
 	int gridSize;
 	int textureWidth;
 	Vector2D pos;
 	Uint32* pixels;
 	Uint32* fpixels;
 	Uint32* cpixels;
-	double ra;
-	double angle;
+	float ra;
+	float angle;
 	int begin;
 	int end;
-	double FOV;
+	float FOV;
 };
 
 int fcCalc(void* data) {
@@ -247,31 +247,36 @@ int fcCalc(void* data) {
 
 	int screenHeight = cData.screenHeight;
 	int screenWidth = cData.screenWidth;
-	double offset = cData.offset;
+	float offset = cData.offset;
 	int gridSize = cData.gridSize;
 	int textureWidth = cData.textureWidth;
-	Vector2D pos = cData.pos;
+	Vector2DF pos{cData.pos.x, cData.pos.y};
 	Uint32* pixels = cData.pixels;
 	Uint32* fpixels = cData.fpixels;
 	Uint32* cpixels = cData.cpixels;
-	double FOV = cData.FOV;
+	float FOV = cData.FOV;
 	
-	double ra = cData.ra;
-	double angle = cData.angle;
+	float ra = cData.ra;
+	float angle = cData.angle;
 	
 	for (int i = cData.begin; i < cData.end; i++) {
 
-		double rcos = cos(ra);
-		double rsin = sin(ra);
-		double dcos = cos(ra - angle);
-		//floor
-		for (int j = screenHeight; j > screenHeight / 2 + offset; j--) {
-			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / dcos;
-			double x = pos.x / gridSize - rcos * n;
-			double y = pos.y / gridSize - rsin * n;
+		// pre calc for fps boost
+		float rcos = cos(ra);
+		float rsin = sin(ra);
+		float dcos = cos(ra - angle);
+		float pxg = pos.x / gridSize;
+		float pyg = pos.y / gridSize;
+		float halfsH = screenHeight / 2;
 
-			int tx = (x - (int)x) * textureWidth;
-			int ty = (y - (int)y) * textureWidth;
+		//floor
+		for (int j = screenHeight; j > halfsH + offset; j--) {
+			float n = (halfsH / (halfsH - j + offset)) / dcos;
+			float x = pxg - rcos * n;
+			float y = pyg - rsin * n;
+
+			int tx = (x - std::floor(x)) * textureWidth;
+			int ty = (y - std::floor(y)) * textureWidth;
 
 			if (tx < 0)
 				tx += textureWidth;
@@ -279,17 +284,18 @@ int fcCalc(void* data) {
 				ty += textureWidth;
 
 			int fpos = int(j - 1) * screenWidth + i;
-			pixels[fpos] = fpixels[ty * textureWidth + tx];
+			int tpos = ty * textureWidth + tx;
+			pixels[fpos] = fpixels[tpos];
 		}
 
 		//ceiling
-		for (int j = 0; j < screenHeight / 2 + offset; j++) {
-			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / dcos;
-			double x = pos.x / gridSize + rcos * n;
-			double y = pos.y / gridSize + rsin * n;
+		for (int j = 0; j < halfsH + offset; j++) {
+			float n = (halfsH / (halfsH - j + offset)) / dcos;
+			float x = pxg + rcos * n;
+			float y = pyg + rsin * n;
 
-			int tx = (x - (int)x) * textureWidth;
-			int ty = (y - (int)y) * textureWidth;
+			int tx = (x - std::floor(x)) * textureWidth;
+			int ty = (y - std::floor(y)) * textureWidth;
 
 			if (tx < 0)
 				tx += textureWidth;
@@ -318,9 +324,9 @@ void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* textu
 
 	// floorceiling
 	Vector2D pos = entity->getPos();
-	double angle = entity->getAngle();
-	double ra = angle - DR * FOV / 2;
-	double offset = tan(entity->getShear()) * screenHeight;
+	float angle = entity->getAngle();
+	float ra = angle - DR * FOV / 2;
+	float offset = tan(entity->getShear()) * screenHeight;
 
 	Uint32* pixels = new Uint32[screenHeight * screenWidth];
 	Uint32* fpixels = (Uint32*)floor.pixels;
