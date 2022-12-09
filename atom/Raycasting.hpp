@@ -15,7 +15,7 @@ public:
 	void SetEntity(Entity* entity);
 
 	void DrawWalls(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth);
-	void DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, Atom::Surface& floor, Atom::Surface& ceiling, int textureWidth);
+	void DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, Atom::Surface& floor, Atom::Surface& ceiling, int textureWidth, int threadCount);
 
 	void ListenKeys(double frameTime);
 private:

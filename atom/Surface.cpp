@@ -11,7 +11,9 @@ Surface::Surface(const char* path): pixels(NULL), textureSurface(NULL), converte
 }
 
 Surface::~Surface() {
-	delete[] pixels;
-	SDL_FreeSurface(textureSurface);
+	if (textureSurface != NULL) {
+		SDL_FreeSurface(textureSurface);
+		textureSurface = NULL;
+	}
 	SDL_FreeSurface(convertedSurface);
 }

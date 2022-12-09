@@ -7,7 +7,7 @@ namespace Atom {
 	public:
 		Surface( const char* path);
 		~Surface();
-		
+	
 		void* pixels;
 		SDL_Surface* textureSurface;
 		SDL_Surface* convertedSurface;

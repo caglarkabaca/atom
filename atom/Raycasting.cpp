@@ -3,6 +3,7 @@
 
 // TEST THREADING
 #include <SDL/SDL_thread.h>
+#include <string>
 
 #define MOVESPEED_MULTIPLER 250.0
 #define ROTSPEED_MULTIPLER 10
@@ -147,6 +148,7 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 	double angle = entity->getAngle();
 	double shear = entity->getShear();
 
+
 	const double sizeOfColumn = screenWidth / FOV;
 	double offset = tan(shear) * screenHeight;
 
@@ -198,10 +200,10 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 
 		// ters texturelar düzeliyor
 		if (side == 0 && ra < M_PI)
-			tx = textureWidth - tx;
+			tx = textureWidth - tx - 1;
 
 		if (side == 1 && ra > M_PI / 2 && ra < 3 * M_PI / 2)
-			tx = textureWidth - tx;
+			tx = textureWidth - tx - 1;
 
 		// uzaklar daha karanlýk
 		double darkness = lineH / screenHeight + DEPTH_OFFSET;
@@ -310,7 +312,9 @@ int fcCalc(void* data) {
 	return true;
 }
 
-void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, Atom::Surface& floor, Atom::Surface& ceiling, int textureWidth) {
+void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, 
+	Atom::Surface& floor, Atom::Surface& ceiling, 
+	int textureWidth, int threadCount) {
 
 	// floorceiling
 	Vector2D pos = entity->getPos();
@@ -328,54 +332,49 @@ void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* textu
 		ra -= 2 * M_PI;
 
 	memset(pixels, 255, screenWidth * screenHeight * sizeof(Uint32));
+	
+	CalcStruct** cDatas = new CalcStruct*[threadCount];
+	SDL_Thread** threads = new SDL_Thread * [threadCount];
 
-	CalcStruct* cData = new CalcStruct;
-	cData->screenHeight = screenHeight;
-	cData->screenWidth = screenWidth;
-	cData->offset = offset;
-	cData->gridSize = gridSize;
-	cData->textureWidth = textureWidth;
-	cData->pos = pos;
-	cData->pixels = pixels;
-	cData->fpixels = fpixels;
-	cData->cpixels = cpixels;
-	cData->ra = ra;
-	cData->angle = angle;
-	cData->FOV = FOV;
-	cData->begin = 0;
-	cData->end = screenWidth / 2;
-	SDL_Thread* fcT1 = SDL_CreateThread(fcCalc, "fcT1", (void*)cData);
+	for (int i = 0; i < threadCount; i++) {
+		CalcStruct* cData = new CalcStruct;
+		cData->screenHeight = screenHeight;
+		cData->screenWidth = screenWidth;
+		cData->offset = offset;
+		cData->gridSize = gridSize;
+		cData->textureWidth = textureWidth;
+		cData->pos = pos;
+		cData->pixels = pixels;
+		cData->fpixels = fpixels;
+		cData->cpixels = cpixels;
+		cData->ra = ra;
+		cData->angle = angle;
+		cData->FOV = FOV;
+		cData->begin = screenWidth * i / threadCount;
+		cData->end = screenWidth * (i + 1) / threadCount;
 
-	for (int i = 0; i < screenWidth / 2; i++) {
-		ra += DR * FOV / screenWidth;
+		std::string tname = "fct" + std::to_string(i);
+		SDL_Thread* fcT = SDL_CreateThread(fcCalc, tname.c_str(), (void*)cData);
+
+		ra += DR * (screenWidth / threadCount) * FOV / screenWidth;
 		if (ra < 0)
 			ra += 2 * M_PI;
 		if (ra > 2 * M_PI)
 			ra -= 2 * M_PI;
+
+		cDatas[i] = cData;
+		threads[i] = fcT;
 	}
 
-	CalcStruct* cData2 = new CalcStruct;
-	cData2->screenHeight = screenHeight;
-	cData2->screenWidth = screenWidth;
-	cData2->offset = offset;
-	cData2->gridSize = gridSize;
-	cData2->textureWidth = textureWidth;
-	cData2->pos = pos;
-	cData2->pixels = pixels;
-	cData2->fpixels = fpixels;
-	cData2->cpixels = cpixels;
-	cData2->ra = ra;
-	cData2->angle = angle;
-	cData2->FOV = FOV;
-	cData2->begin = screenWidth / 2;
-	cData2->end = screenWidth;
-
-	SDL_Thread* fcT2 = SDL_CreateThread(fcCalc, "fcT2", (void*)cData2);
-
-
 	int t = true;
-	SDL_WaitThread(fcT1, &t);
-	SDL_WaitThread(fcT2, &t);
+	for (int i = 0; i < threadCount; i++) {
+		SDL_WaitThread(threads[i], &t);
+	}
+
+	for (int i = 0; i < threadCount; i++) {
+		delete cDatas[i];
+	}
+	delete[] cDatas;
 
 	SDL_UpdateTexture(texture, NULL, pixels, screenWidth * sizeof(Uint32));
 	delete[] pixels;

@@ -19,6 +19,7 @@
 #define TITLE	"Title"
 
 #define FPS		144
+#define THREADCOUNT 4
 
 int main(int, char* []) {
 	Map minimap;
@@ -65,32 +66,32 @@ int main(int, char* []) {
 	int sizeArrayTexture = 6;
 	SDL_Texture** textureArray = new SDL_Texture * [sizeArrayTexture];
 
-	int txtSize = 512;
+	int txtSize = 128;
 	textureArray[0] = NULL; //null
-	textureArray[1] = txtManager.LoadTexture("assets/gridbox/blue3.png");
-	textureArray[2] = txtManager.LoadTexture("assets/gridbox/green2.png");
-	textureArray[3] = txtManager.LoadTexture("assets/gridbox/brown.png");
-	textureArray[4] = txtManager.LoadTexture("assets/gridbox/red.png");
-	textureArray[5] = txtManager.LoadTexture("assets/gridbox/yellow.png");
-
+	textureArray[1] = txtManager.LoadTexture("assets/128/Atom_Blue.png");
+	textureArray[2] = txtManager.LoadTexture("assets/128/Atom_Green.png");
+	textureArray[3] = txtManager.LoadTexture("assets/128/Atom_Purple.png");
+	textureArray[4] = txtManager.LoadTexture("assets/128/Atom_Red.png");
+	textureArray[5] = txtManager.LoadTexture("assets/128/Atom_Yellow.png");
 
 	SDL_Texture* texture = SDL_CreateTexture(render.getRenderer(), 
 		SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
-	Atom::Surface floor("assets/gridbox/grey3.png");
-	Atom::Surface ceiling("assets/gridbox/orange.png");
+	Atom::Surface floor("assets/128/Atom_Black.png");
+	Atom::Surface ceiling("assets/128/Atom_LBlue.png");
+	bool hideFC = false;
 
 	double oldTime = 0, time = 0;
-
-
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
 
-	TTF_Init();
-	TTF_Font* font = TTF_OpenFont("assets/OpenSans.ttf", 32);
+	double lfps = 1000, hfps = 0;
 
-	SDL_Event event;
+	TTF_Init();
+	TTF_Font* font = TTF_OpenFont("assets/OpenSans.ttf", 28);
+
 	// game loop
 	while (isRunning) {
+
 		//Fps limitorü
 		fps_first = SDL_GetTicks();
 		delta = fps_first - fps_last;
@@ -101,20 +102,31 @@ int main(int, char* []) {
 
 		// q => quit
 		// f => toggle fullscreen
-		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT)
+		// z => hide floor and ceiling
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_KEYDOWN) {
+				switch (event.key.keysym.sym) {
+					case SDLK_q:
+						isRunning = false;
+						break;
+					case SDLK_f:
+						render.ToggleFullscreen();
+						break;
+					case SDLK_z:
+						hideFC = !hideFC;
+						break;
+				}
+			}
+			else if (event.type == SDL_QUIT)
 				isRunning = false;
-			if (event.type == SDL_KEYDOWN)
-				if (event.key.keysym.scancode == SDL_SCANCODE_Q)
-					isRunning = false;
-			if (event.type == SDL_KEYDOWN)
-				if (event.key.keysym.scancode == SDL_SCANCODE_F)
-					render.ToggleFullscreen();
 		}
 
 		// Bütün çizdirme kodu bu aralýkta olmalý
 
-		rayCasting.DrawFloorCeiling(txtManager, texture, floor, ceiling, txtSize);
+		if (!hideFC)
+			rayCasting.DrawFloorCeiling(txtManager, texture, floor, ceiling, txtSize, THREADCOUNT);
 		rayCasting.DrawWalls(txtManager, textureArray, txtSize);
 
 		////Minimap
@@ -122,12 +134,21 @@ int main(int, char* []) {
 		//minimap.DrawPlayer(&render, player.getPos().x, player.getPos().y);
 
 		//fps text
+		if (fps > hfps)
+			hfps = fps;
+		if (fps < lfps)
+			lfps = fps;
 		std::string s = std::to_string((int)fps);
-		char fpst[100];
-		sprintf_s(fpst, "FPS: %s Threads: 2", s);
-		SDL_Surface* surface = TTF_RenderText_Solid(font, fpst, { 255, 255, 255 });
+		std::string fpst = "FPS: " + s + " Threads: " + std::to_string(THREADCOUNT);
+		SDL_Surface* surface = TTF_RenderText_Solid(font, fpst.c_str(), {255, 255, 255});
 		SDL_Texture* texture = SDL_CreateTextureFromSurface(render.getRenderer(), surface);
 		SDL_Rect dst{ 0, 0, surface->w, surface->h };
+		int h = surface->h;
+		SDL_RenderCopy(render.getRenderer(), texture, NULL, &dst);
+		fpst = "Min: " + std::to_string(lfps) + " Max: " + std::to_string(hfps);
+		surface = TTF_RenderText_Solid(font, fpst.c_str(), { 255, 255, 255 });
+		texture = SDL_CreateTextureFromSurface(render.getRenderer(), surface);
+		dst = { 0, h, surface->w, surface->h };
 		SDL_RenderCopy(render.getRenderer(), texture, NULL, &dst);
 
 		render.Update();
