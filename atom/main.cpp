@@ -1,5 +1,8 @@
 #include <SDL.h>
 
+#include <SDL_ttf.h>
+#include <string>
+
 #include "Structs.hpp"
 #include "Render.hpp"
 #include "TextureManager.hpp"
@@ -51,7 +54,7 @@ int main(int, char* []) {
 
 	int gridSize = 128;
 
-	double FOV = 64;
+	double FOV = 70;
 	Vector2D pos = { 22 * gridSize, 12 * gridSize };
 	double angle = M_PI;
 
@@ -62,7 +65,7 @@ int main(int, char* []) {
 	int sizeArrayTexture = 6;
 	SDL_Texture** textureArray = new SDL_Texture * [sizeArrayTexture];
 
-	int txtSize = 256;
+	int txtSize = 512;
 	textureArray[0] = NULL; //null
 	textureArray[1] = txtManager.LoadTexture("assets/gridbox/blue3.png");
 	textureArray[2] = txtManager.LoadTexture("assets/gridbox/green2.png");
@@ -81,6 +84,10 @@ int main(int, char* []) {
 
 	bool isRunning = true;
 	int delta = 0, fps_first = 0, fps_last = 0; // FPS limitörü için
+
+	TTF_Init();
+	TTF_Font* font = TTF_OpenFont("assets/OpenSans.ttf", 32);
+
 	SDL_Event event;
 	// game loop
 	while (isRunning) {
@@ -89,7 +96,7 @@ int main(int, char* []) {
 		delta = fps_first - fps_last;
 		if (delta <= 1000 / FPS)
 			SDL_Delay(1000 / FPS - delta);
-
+		double fps = (delta > 0) ? 1000.0f / delta : 0.0f;
 		render.Clear();
 
 		// q => quit
@@ -107,10 +114,6 @@ int main(int, char* []) {
 
 		// Bütün çizdirme kodu bu aralýkta olmalý
 
-		// bg
-		double offset = tan(player.getShear()) * HEIGHT;
-		render.DrawRect(0, 0, WIDTH, HEIGHT, { 200, 200, 200, 255 });			// tavan
-
 		rayCasting.DrawFloorCeiling(txtManager, texture, floor, ceiling, txtSize);
 		rayCasting.DrawWalls(txtManager, textureArray, txtSize);
 
@@ -118,13 +121,25 @@ int main(int, char* []) {
 		//minimap.DrawMap(&render, map);
 		//minimap.DrawPlayer(&render, player.getPos().x, player.getPos().y);
 
+		//fps text
+		std::string s = std::to_string((int)fps);
+		char fpst[100];
+		sprintf_s(fpst, "FPS: %s Threads: 2", s);
+		SDL_Surface* surface = TTF_RenderText_Solid(font, fpst, { 255, 255, 255 });
+		SDL_Texture* texture = SDL_CreateTextureFromSurface(render.getRenderer(), surface);
+		SDL_Rect dst{ 0, 0, surface->w, surface->h };
+		SDL_RenderCopy(render.getRenderer(), texture, NULL, &dst);
+
 		render.Update();
+		SDL_FreeSurface(surface);
+		SDL_DestroyTexture(texture);
 
 		oldTime = time;
 		time = SDL_GetTicks();
 		double frameTime = (time - oldTime) / 1000.0;
 		rayCasting.ListenKeys(frameTime);
 		fps_last = fps_first;
+
 	}
 
 	// free texture datas
@@ -136,5 +151,9 @@ int main(int, char* []) {
 
 	// otomatik render.~Render() çaðýrýyor, gerek yok yazmaya
 	// render.~Render();
+
+	TTF_CloseFont(font);
+	TTF_Quit();
+
 	return 0;
 }

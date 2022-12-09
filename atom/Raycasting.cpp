@@ -1,6 +1,9 @@
 #include "Raycasting.hpp"
 #include <iostream>
 
+// TEST THREADING
+#include <SDL/SDL_thread.h>
+
 #define MOVESPEED_MULTIPLER 250.0
 #define ROTSPEED_MULTIPLER 10
 #define UPDOWN_OFFSET M_PI / 8
@@ -218,9 +221,98 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 	}
 }
 
+// threadler için deniyorum
+struct CalcStruct {
+	int screenHeight;
+	int screenWidth;
+	double offset;
+	int gridSize;
+	int textureWidth;
+	Vector2D pos;
+	Uint32* pixels;
+	Uint32* fpixels;
+	Uint32* cpixels;
+	double ra;
+	double angle;
+	int begin;
+	int end;
+	double FOV;
+};
+
+int fcCalc(void* data) {
+
+	CalcStruct cData = *((CalcStruct*)data);
+
+	int screenHeight = cData.screenHeight;
+	int screenWidth = cData.screenWidth;
+	double offset = cData.offset;
+	int gridSize = cData.gridSize;
+	int textureWidth = cData.textureWidth;
+	Vector2D pos = cData.pos;
+	Uint32* pixels = cData.pixels;
+	Uint32* fpixels = cData.fpixels;
+	Uint32* cpixels = cData.cpixels;
+	double FOV = cData.FOV;
+	
+	double ra = cData.ra;
+	double angle = cData.angle;
+	
+	for (int i = cData.begin; i < cData.end; i++) {
+
+		double rcos = cos(ra);
+		double rsin = sin(ra);
+		double dcos = cos(ra - angle);
+		//floor
+		for (int j = screenHeight; j > screenHeight / 2 + offset; j--) {
+			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / dcos;
+			double x = pos.x / gridSize - rcos * n;
+			double y = pos.y / gridSize - rsin * n;
+
+			int tx = (x - (int)x) * textureWidth;
+			int ty = (y - (int)y) * textureWidth;
+
+			if (tx < 0)
+				tx += textureWidth;
+			if (ty < 0)
+				ty += textureWidth;
+
+			int fpos = int(j - 1) * screenWidth + i;
+			pixels[fpos] = fpixels[ty * textureWidth + tx];
+		}
+
+		//ceiling
+		for (int j = 0; j < screenHeight / 2 + offset; j++) {
+			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / dcos;
+			double x = pos.x / gridSize + rcos * n;
+			double y = pos.y / gridSize + rsin * n;
+
+			int tx = (x - (int)x) * textureWidth;
+			int ty = (y - (int)y) * textureWidth;
+
+			if (tx < 0)
+				tx += textureWidth;
+			if (ty < 0)
+				ty += textureWidth;
+
+			int cpos = int(j) * screenWidth + i;
+			int tpos = ty * textureWidth + tx;
+			pixels[cpos] = cpixels[tpos];
+		}
+
+		ra += DR * FOV / screenWidth;
+		if (ra < 0)
+			ra += 2 * M_PI;
+		if (ra > 2 * M_PI)
+			ra -= 2 * M_PI;
+
+	}
+
+	return true;
+}
+
 void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, Atom::Surface& floor, Atom::Surface& ceiling, int textureWidth) {
 
-	// floor
+	// floorceiling
 	Vector2D pos = entity->getPos();
 	double angle = entity->getAngle();
 	double ra = angle - DR * FOV / 2;
@@ -237,45 +329,24 @@ void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* textu
 
 	memset(pixels, 255, screenWidth * screenHeight * sizeof(Uint32));
 
-	for (int i = 0; i < screenWidth; i++) {
-		//floor
+	CalcStruct* cData = new CalcStruct;
+	cData->screenHeight = screenHeight;
+	cData->screenWidth = screenWidth;
+	cData->offset = offset;
+	cData->gridSize = gridSize;
+	cData->textureWidth = textureWidth;
+	cData->pos = pos;
+	cData->pixels = pixels;
+	cData->fpixels = fpixels;
+	cData->cpixels = cpixels;
+	cData->ra = ra;
+	cData->angle = angle;
+	cData->FOV = FOV;
+	cData->begin = 0;
+	cData->end = screenWidth / 2;
+	SDL_Thread* fcT1 = SDL_CreateThread(fcCalc, "fcT1", (void*)cData);
 
-		for (int j = screenHeight; j > screenHeight / 2 + offset; j--) {
-			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / cos(ra - angle);
-			double x = pos.x / gridSize - cos(ra) * n;
-			double y = pos.y / gridSize - sin(ra) * n;
-
-			int tx = (x - (int)x) * textureWidth;
-			int ty = (y - (int)y) * textureWidth;
-
-			if (tx < 0)
-				tx += textureWidth;
-			if (ty < 0)
-				ty += textureWidth;
-
-			int fpos = int(j - 1) * screenWidth + i;
-			pixels[fpos] = fpixels[ty * textureWidth + tx];
-
-		}
-
-		for (int j = 0; j < screenHeight / 2 + offset; j++) {
-			double n = ((screenHeight / 2) / (screenHeight / 2 - j + offset)) / cos(ra - angle);
-			double x = pos.x / gridSize + cos(ra) * n;
-			double y = pos.y / gridSize + sin(ra) * n;
-
-			int tx = (x - (int)x) * textureWidth;
-			int ty = (y - (int)y) * textureWidth;
-
-			if (tx < 0)
-				tx += textureWidth;
-			if (ty < 0)
-				ty += textureWidth;
-
-			int cpos = int(j) * screenWidth + i;
-			pixels[cpos] = cpixels[ty * textureWidth + tx];
-
-		}
-
+	for (int i = 0; i < screenWidth / 2; i++) {
 		ra += DR * FOV / screenWidth;
 		if (ra < 0)
 			ra += 2 * M_PI;
@@ -283,10 +354,32 @@ void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* textu
 			ra -= 2 * M_PI;
 	}
 
+	CalcStruct* cData2 = new CalcStruct;
+	cData2->screenHeight = screenHeight;
+	cData2->screenWidth = screenWidth;
+	cData2->offset = offset;
+	cData2->gridSize = gridSize;
+	cData2->textureWidth = textureWidth;
+	cData2->pos = pos;
+	cData2->pixels = pixels;
+	cData2->fpixels = fpixels;
+	cData2->cpixels = cpixels;
+	cData2->ra = ra;
+	cData2->angle = angle;
+	cData2->FOV = FOV;
+	cData2->begin = screenWidth / 2;
+	cData2->end = screenWidth;
+
+	SDL_Thread* fcT2 = SDL_CreateThread(fcCalc, "fcT2", (void*)cData2);
+
+
+	int t = true;
+	SDL_WaitThread(fcT1, &t);
+	SDL_WaitThread(fcT2, &t);
+
 	SDL_UpdateTexture(texture, NULL, pixels, screenWidth * sizeof(Uint32));
 	delete[] pixels;
 	txtManager.DrawP(texture, NULL, NULL);
-
 }
 
 /*
