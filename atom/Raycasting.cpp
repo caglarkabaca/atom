@@ -105,10 +105,10 @@ Vector2D castTheRay(double ra, Vector2D pos, int mapSize, int gridSize, int** ma
 
 }
 
-Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize, double FOV):
+Raycasting::Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize, double FOV, int threadCount):
 	screenWidth(screenWidth), screenHeight(screenHeight), 
 	mapX(mapX), mapY(mapY), entity(NULL), gridSize(gridSize), 
-	FOV(FOV), mapMaxGrid(mapX) {
+	FOV(FOV), mapMaxGrid(mapX), threadCount(threadCount) {
 
 	if (mapY > mapX)
 		mapMaxGrid = mapY;
@@ -138,24 +138,24 @@ void Raycasting::SetEntity(Entity* entity) { this->entity = entity; }
 
 /*
 	RENDER
+	 Debug
 	 Wall
 	 FloorCeiling
 */
 
-void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth) {
+void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth, int* b, int* e) {
 
 	Vector2D pos{ entity->getPos() }, dir{ entity->getDir() };
-	double angle = entity->getAngle();
-	double shear = entity->getShear();
+	float angle = entity->getAngle();
+	float shear = entity->getShear();
 
-
-	const double sizeOfColumn = screenWidth / FOV;
-	double offset = tan(shear) * screenHeight;
+	const float sizeOfColumn = screenWidth / FOV;
+	float offset = tan(shear) * screenHeight;
 
 	int mapSize = mapMaxGrid;
 
 	// cast the rays
-	double rx{}, ry{}, ra{}, xo{}, yo{};
+	float ra{};
 	ra = angle - DR * FOV / 2;
 	if (ra < 0)
 		ra += 2 * M_PI;
@@ -168,7 +168,7 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 		int side = 0;
 		Vector2D ray = castTheRay(ra, pos, mapSize, gridSize, map, side);
 		int mx{ (int)ray.x / gridSize }, my{ (int)ray.y / gridSize };
-		double dist{ sqrt(((ray.x - pos.x) * (ray.x - pos.x) + (ray.y - pos.y) * (ray.y - pos.y)))};
+		float dist{(float) (sqrt(((ray.x - pos.x) * (ray.x - pos.x) + (ray.y - pos.y) * (ray.y - pos.y)))) };
 
 		// bulunan kare (mx, my)
 		// tam kordinat için (hx, hy) ve (vx, vy) yi karþýlaþtýrýp dist i küçük olaný alýcaz
@@ -177,20 +177,20 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 		// eðer minimapte ray i göstermek istiyorsak buraya ekleyebiliriz
 
 		// fix fisheye
-		double ca = angle - ra;
+		float ca = angle - ra;
 		if (ca < 0)
 			ca -= 2 * M_PI;
 		dist *= cos(ca);
 
-		double lineH = (gridSize * screenHeight) / dist;
+		float lineH = (gridSize * screenHeight) / dist;
 		//if (lineH > screenHeight) // yukarý aþaðý için kapattým
 		//	lineH = screenHeight;
-		double lineO = screenHeight / 2 - lineH / 2;
+		float lineO = screenHeight / 2 - lineH / 2;
 
 		// up down movement
 		lineO += offset;
 
-		double wallX{};
+		float wallX{};
 		if (side == 0) 
 			wallX = ray.x - (mx * gridSize);
 		else 
@@ -206,7 +206,7 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 			tx = textureWidth - tx - 1;
 
 		// uzaklar daha karanlýk
-		double darkness = lineH / screenHeight + DEPTH_OFFSET;
+		float darkness = lineH / screenHeight + DEPTH_OFFSET;
 		if (darkness > 1)
 			darkness = 1;
 		SDL_SetTextureColorMod(textureArray[map[my][mx]], 255 * darkness, 255 * darkness, 255 * darkness);
@@ -214,6 +214,9 @@ void Raycasting::DrawWalls(TextureManager& txtManager, SDL_Texture** textureArra
 		SDL_Rect src{ tx, 0, 1, textureWidth };
 		SDL_Rect dst{ i, lineO, 1, lineH };
 		txtManager.Draw(textureArray[map[my][mx]], src, dst);
+
+		b[i] = lineO;
+		e[i] = lineO + lineH;
 
 		ra += DR * FOV / screenWidth;
 		if (ra < 0)
@@ -239,6 +242,8 @@ struct CalcStruct {
 	int begin;
 	int end;
 	float FOV;
+	int* b;
+	int* e;
 };
 
 int fcCalc(void* data) {
@@ -255,6 +260,8 @@ int fcCalc(void* data) {
 	Uint32* fpixels = cData.fpixels;
 	Uint32* cpixels = cData.cpixels;
 	float FOV = cData.FOV;
+	int* b = cData.b;
+	int* e = cData.e;
 	
 	float ra = cData.ra;
 	float angle = cData.angle;
@@ -271,6 +278,10 @@ int fcCalc(void* data) {
 
 		//floor
 		for (int j = screenHeight; j > halfsH + offset; j--) {
+
+			if (e[i] > j)
+				break;
+
 			float n = (halfsH / (halfsH - j + offset)) / dcos;
 			float x = pxg - rcos * n;
 			float y = pyg - rsin * n;
@@ -286,10 +297,15 @@ int fcCalc(void* data) {
 			int fpos = int(j - 1) * screenWidth + i;
 			int tpos = ty * textureWidth + tx;
 			pixels[fpos] = fpixels[tpos];
+
 		}
 
 		//ceiling
 		for (int j = 0; j < halfsH + offset; j++) {
+
+			if (b[i] < j)
+				break;
+
 			float n = (halfsH / (halfsH - j + offset)) / dcos;
 			float x = pxg + rcos * n;
 			float y = pyg + rsin * n;
@@ -320,7 +336,8 @@ int fcCalc(void* data) {
 
 void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, 
 	Atom::Surface& floor, Atom::Surface& ceiling, 
-	int textureWidth, int threadCount) {
+	int textureWidth, int threadCount,
+	int* b, int* e) {
 
 	// floorceiling
 	Vector2D pos = entity->getPos();
@@ -358,6 +375,8 @@ void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* textu
 		cData->FOV = FOV;
 		cData->begin = screenWidth * i / threadCount;
 		cData->end = screenWidth * (i + 1) / threadCount;
+		cData->b = b;
+		cData->e = e;
 
 		std::string tname = "fct" + std::to_string(i);
 		SDL_Thread* fcT = SDL_CreateThread(fcCalc, tname.c_str(), (void*)cData);
@@ -393,10 +412,10 @@ void Raycasting::DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* textu
 void Raycasting::ListenKeys(double frameTime) {
 
 	Vector2D pos = entity->getPos(), dir = entity->getDir();
-	double angle = entity->getAngle();
-	double shear = entity->getShear();
+	float angle = entity->getAngle();
+	float shear = entity->getShear();
 	//speed modifiers
-	double moveSpeed = frameTime * MOVESPEED_MULTIPLER; //the constant value is in squares/second
+	float moveSpeed = frameTime * MOVESPEED_MULTIPLER; //the constant value is in squares/second
 
 	const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 

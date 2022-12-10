@@ -10,12 +10,14 @@
 class Raycasting
 {
 public:
-	Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize, double FOV);
+	Raycasting(int screenWidth, int screenHeight, int* map, int mapX, int mapY, int gridSize, double FOV, int threadCount);
 	~Raycasting();
 	void SetEntity(Entity* entity);
 
-	void DrawWalls(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth);
-	void DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, Atom::Surface& floor, Atom::Surface& ceiling, int textureWidth, int threadCount);
+	void DrawWalls(TextureManager& txtManager, SDL_Texture** textureArray, int textureWidth, int* b, int* e);
+	void DrawFloorCeiling(TextureManager& txtManager, SDL_Texture* texture, 
+		Atom::Surface& floor, Atom::Surface& ceiling, int textureWidth, int threadCount,
+		int* b, int* e);
 
 	void ListenKeys(double frameTime);
 private:
@@ -25,6 +27,8 @@ private:
 	int** map;
 	double FOV;
 	int mapMaxGrid;
+	int threadCount;
+	
 
 	Entity* entity;
 };
