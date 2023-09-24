@@ -68,6 +68,7 @@ target_link_libraries(
         SDL2main
         SDL2
         SDL2_image
+        SDL2_ttf
 )
 
 

@@ -1,5 +1,5 @@
 #pragma once
-#include <SDL.h>
+#include "SDL.h"
 #include "Render.hpp"
 #include "SDL_image.h" //texture i�in gerekli
 
@@ -12,7 +12,8 @@ public:
 	SDL_Texture* LoadTexture(const char* fileName); 
 
 	// source ve destination rectangles i�in bknz: https://wiki.libsdl.org/SDL_RenderCopy
-	void Draw(SDL_Texture* texture, SDL_Rect source, SDL_Rect destination); 
+	void Draw(SDL_Texture* texture, SDL_Rect source, SDL_Rect destination);
+	void DrawP(SDL_Texture* texture, SDL_Rect* source, SDL_Rect* destination);
 
 private:
 	SDL_Renderer* renderer;
