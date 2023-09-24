@@ -1,6 +1,2 @@
-.vs/
-.vs
-Debug/
-x64/
-atom/Debug
-atom/x64/
+bin/
+build/
