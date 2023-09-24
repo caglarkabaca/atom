@@ -1,5 +1,5 @@
 #pragma once
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "Render.hpp"
 #include "TextureManager.hpp"
 #include "Entity.hpp"

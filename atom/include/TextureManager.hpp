@@ -1,7 +1,7 @@
 #pragma once
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "Render.hpp"
-#include "SDL2/SDL_image.h" //texture i�in gerekli
+#include "SDL_image.h" //texture i�in gerekli
 
 class TextureManager {
 	

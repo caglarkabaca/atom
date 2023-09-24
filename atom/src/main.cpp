@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "Structs.hpp"
 #include "Render.hpp"
@@ -10,19 +10,6 @@
 #include <math.h>
 #include <iostream>
 
-// TEST
-#include <SDL2/SDL_thread.h>
-
-int log(void* ent) {
-
-	double ra = 1;
-	while (ra > 0) {
-		ra = ((Entity*)ent)->getAngle();
-		std::cout << ra << std::endl;
-	}
-	return 0;
-}
-
 #define WIDTH	1280
 #define HEIGHT	720
 #define TITLE	"Title"
@@ -33,6 +20,7 @@ int main(int, char* []) {
 	Map minimap;
 	Render render(TITLE, WIDTH, HEIGHT);
 	TextureManager txtManager(render);
+
 
 	int map[24][24] = {
 	  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -84,10 +72,8 @@ int main(int, char* []) {
 
 	double oldTime = 0, time = 0;
 
-	SDL_Thread* logId = SDL_CreateThread(log, "testThread", &player);
-
 	bool isRunning = true;
-	int delta = 0, fps_first = 0, fps_last = 0; // FPS limit�r� i�in
+	float delta = 0.f, fps_first = 0.f, fps_last = 0.f; // FPS limit�r� i�in
 	SDL_Event event;
 	// game loop
 	while (isRunning) {
@@ -112,9 +98,6 @@ int main(int, char* []) {
 					render.ToggleFullscreen();
 		}
 
-		// B�t�n �izdirme kodu bu aral�kta olmal�
-		
-
 		// bg
 		double offset = tan(player.getShear()) * HEIGHT;
 		render.DrawRect(0, 0, WIDTH, HEIGHT, { 200, 200, 200, 255 });			// tavan
@@ -126,18 +109,16 @@ int main(int, char* []) {
 		//Minimap
 		minimap.DrawMap(&render, map);
 		minimap.DrawPlayer(&render, player.getPos().x, player.getPos().y);
-
+		
 		render.Update();
 
 		oldTime = time;
 		time = SDL_GetTicks();
 		double frameTime = (time - oldTime) / 1000.0;
+		std::cout << frameTime << " ms" << std::endl;
 		rayCasting.ListenKeys(frameTime);
 		fps_last = fps_first;
 	}
-
-	player.setAngle(-1);
-	SDL_WaitThread(logId, NULL);
 
 	// free texture datas
 	for (int i = 0; i < sizeArrayTexture; i++) {

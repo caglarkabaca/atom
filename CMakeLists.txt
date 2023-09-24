@@ -33,10 +33,13 @@ message(STATUS "SDL2_LIBRARY ${SDL2_LIBRARY}")
 
 # SETUP INCLUDE AND LINK DIRS:
 
+set(ATOM_SOURCE_DIR ${PROJECT_SOURCE_DIR}/atom)
+set(IMGUI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/ImGUI)
 
 include_directories(
     ${SDL2_INCLUDE_DIR}
-    ${PROJECT_SOURCE_DIR}/include
+    ${ATOM_SOURCE_DIR}/include
+    ${IMGUI_SOURCE_DIR}/include
 )
 
 link_directories(
@@ -46,7 +49,7 @@ link_directories(
 
 # INCLUDE FILES THAT SHOULD BE COMPILED:
 
-file(GLOB_RECURSE SRC "src/*.cpp" "include/*.hpp")
+file(GLOB_RECURSE SRC "${ATOM_SOURCE_DIR}/src/*.cpp" "${ATOM_SOURCE_DIR}/include/*.hpp" "${IMGUI_SOURCE_DIR}/src/*.cpp")
 
 message(STATUS "Add source files:")
 foreach(SRC_FILE IN LISTS SRC)
@@ -72,7 +75,7 @@ target_link_libraries(
 
 message(STATUS "Copying all assets to destination folder...")
 file(
-    COPY assets
+    COPY ${ATOM_SOURCE_DIR}/assets
     DESTINATION ${OUTPUT_DIR}
 )
 
