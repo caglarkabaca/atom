@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow("atom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL);
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
+    //SDL_GL_SetSwapInterval(0); // VSYNC
     glewInit();
 
     int w = 800; // WITDH
@@ -37,22 +38,20 @@ int main(int argc, char *argv[])
     Line line = Line();
     LineConfig lines[w];
 
-    Uint64 previousTime = SDL_GetPerformanceCounter();
-    double secondsPerCount = 1.0 / static_cast<double>(SDL_GetPerformanceFrequency());
+    Uint32 lastUpdate = SDL_GetTicks();
+    float deltaTime;
 
     bool quit = false;
     SDL_Event event;
     while (!quit)
     {
+        Uint64 startTime = SDL_GetPerformanceCounter();
+        Uint32 currentTick = SDL_GetTicks();
+        deltaTime = (currentTick - lastUpdate) / 1000.f;
+        lastUpdate = currentTick;
 
-        Uint64 currentTime = SDL_GetPerformanceCounter();
-        double deltaTime = (currentTime - previousTime) * secondsPerCount;
-        previousTime = currentTime;
-
-        std::cout << "deltaTime: " << deltaTime << std::endl;
-
-        float moveSpeed = deltaTime * 2.f;
-        float rotSpeed = deltaTime * 1.2f;
+        float moveSpeed = deltaTime * 2.5f;
+        float rotSpeed = deltaTime * 2.25f;
 
         while (SDL_PollEvent(&event))
         {
@@ -170,6 +169,12 @@ int main(int argc, char *argv[])
         line.Use();
 
         SDL_GL_SwapWindow(window);
+
+
+        Uint64 endTime = SDL_GetPerformanceCounter();
+        
+        float elapsed = (endTime - startTime) / (float)SDL_GetPerformanceFrequency();
+        std::cout << "FPS: " << 1.f / elapsed << std::endl;
     }
 
     std::cout << "quiting" << std::endl;
