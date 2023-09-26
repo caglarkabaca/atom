@@ -34,7 +34,8 @@ int main(int argc, char *argv[])
     int w = 800; // WITDH
     int h = 600; // HEIGHT
 
-    Line **lines = (Line **)calloc(w, sizeof(Line**));
+    Line line = Line();
+    LineConfig lines[w];
 
     Uint64 previousTime = SDL_GetPerformanceCounter();
     double secondsPerCount = 1.0 / static_cast<double>(SDL_GetPerformanceFrequency());
@@ -154,23 +155,19 @@ int main(int argc, char *argv[])
 
             int lineHeight = (int)(h / perpWallDist);
 
-            lines[x] = new Line(LineConfig{
+            lines[x] = LineConfig{
                 Vec{1.f - x / (w / 2.f),
                     (lineHeight / 2.f) / (w / 2.f)},
                 Vec{1.f - x / (w / 2.f),
                     -1.f * (lineHeight / 2.f) / (w / 2.f)},
                 (map[pos_map.x][pos_map.y] == 1) ? Color {1.f, 0.f, 0.f} : Color{0.f, 1.f, 0.f}
-                });
-
+                };
         }
 
         glClear(GL_COLOR_BUFFER_BIT);
-
-        for (int i = 0; i < w; i++)
-        {
-            lines[i]->Use();
-            delete lines[i];
-        }
+        
+        line.SetLines(lines, w);
+        line.Use();
 
         SDL_GL_SwapWindow(window);
     }

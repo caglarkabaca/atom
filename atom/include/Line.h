@@ -16,21 +16,28 @@ private:
     GLuint shaderProgram;
     GLuint VBO, VAO;
 
+    int last_count;
+
 public:
-    Line(LineConfig config)
+    Line()
     {
         const char *vertexShaderSource = R"(
             #version 330 core
             layout (location = 0) in vec2 aPos;
+            layout (location = 1) in vec3 aColor;
+
+            out vec3 lineColor;
+
             void main() {
                 gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+                lineColor = aColor;
             }
         )";
 
         const char *fragmentShaderSource = R"(
             #version 330 core
             out vec4 FragColor;
-            uniform vec3 lineColor;
+            in vec3 lineColor;
             void main() {
                 FragColor = vec4(lineColor, 1.0);
             }
@@ -54,11 +61,28 @@ public:
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
-        // Çizgi noktalarını tanımla
-        float vertices[] = {
-            config.begin.x, config.begin.y, // Başlangıç noktası
-            config.end.x, config.end.y  // Bitiş noktası
-        };
+    }
+
+    void SetLines(LineConfig* lines, int count) {
+        
+        float vertices[count * 10];
+        last_count = count;
+
+        int index = 0;
+        for (int i = 0; i < count * 10 - 9; i+=10) {
+            vertices[i]     = lines[index].begin.x;// x1
+            vertices[i + 1] = lines[index].begin.y;// y1
+            vertices[i + 2] = lines[index].color.r;// r
+            vertices[i + 3] = lines[index].color.g;// g
+            vertices[i + 4] = lines[index].color.b;// b
+
+            vertices[i + 5] = lines[index].end.x;// x2
+            vertices[i + 6] = lines[index].end.y;// y2
+            vertices[i + 7] = lines[index].color.r;// r
+            vertices[i + 8] = lines[index].color.g;// g
+            vertices[i + 9] = lines[index].color.b;// b
+            index += 1;
+        }
 
         // Vertex verilerini GPU'ya kopyala
         glGenVertexArrays(1, &VAO);
@@ -69,26 +93,17 @@ public:
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
         // Vertex pozisyonları için vertex attrib pointer'ını yapılandır
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
         glEnableVertexAttribArray(0);
-
-        // Shader'a çizgi rengini gönderme
-        GLint lineColorLoc = glGetUniformLocation(shaderProgram, "lineColor");
-        if (lineColorLoc != -1)
-        {
-            glUniform3f(lineColorLoc, config.color.r, config.color.g, config.color.b); // Çizgi rengi: Kırmızı
-        }
-        else
-        {
-            std::cerr << "Uniform 'lineColor' not found in the shader." << std::endl;
-        }
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
     }
 
     void Use()
     {
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_LINES, 0, 2);
+        glDrawArrays(GL_LINES, 0, last_count * 2);
     }
 
     ~Line() {
