@@ -1,149 +1,181 @@
 #include <iostream>
-#include <SDL.h>
-#include <GL/glew.h>
+#include <math.h>
+#include "SDL.h"
+#include "GL/glew.h"
 
-// Shader source code for a simple vertex and fragment shader.
-const char* vertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    layout (location = 1) in vec3 aColor;
-    
-    out vec3 color;
-    
-    void main()
-    {
-        gl_Position = vec4(aPos, 1.0);
-        color = aColor;
-    }
-)";
+#include "Line.h"
+#include "utils.h"
 
-const char* fragmentShaderSource = R"(
-    #version 330 core
-    in vec3 color;
-    out vec4 FragColor;
-    
-    void main()
-    {
-        FragColor = vec4(color, 1.0);
-    }
-)";
+int map[10][10] = {
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+};
 
-int main(int argc, char* argv[])
+struct Vec pos = {2.f, 2.f};
+struct Vec dir = {-1.f, 0.f};
+struct Vec plane = {0.f, 0.66f};
+
+int main(int argc, char *argv[])
 {
-    // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
-        return -1;
-    }
 
-    // Create an SDL window
-    SDL_Window* window = SDL_CreateWindow("OpenGL Triangle", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL);
-    if (!window)
-    {
-        std::cerr << "Failed to create SDL window: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return -1;
-    }
-
-    // Create an OpenGL context
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Window *window = SDL_CreateWindow("atom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL);
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
-    if (!glContext)
-    {
-        std::cerr << "Failed to create OpenGL context: " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
-    }
+    glewInit();
 
-    // Initialize GLEW
-    GLenum glewError = glewInit();
-    if (glewError != GLEW_OK)
-    {
-        std::cerr << "GLEW initialization failed: " << glewGetErrorString(glewError) << std::endl;
-        SDL_GL_DeleteContext(glContext);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
-    }
+    int w = 800; // WITDH
+    int h = 600; // HEIGHT
 
-    // Vertex data for the triangle
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-         0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f
-    };
+    Line **lines = (Line **)calloc(w, sizeof(Line**));
 
-    // Create Vertex Array Object (VAO) and Vertex Buffer Object (VBO)
-    GLuint VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    Uint64 previousTime = SDL_GetPerformanceCounter();
+    double secondsPerCount = 1.0 / static_cast<double>(SDL_GetPerformanceFrequency());
 
-    // Bind VAO and VBO
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    // Copy vertex data to VBO
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Define vertex attribute pointers
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Create and compile shaders
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    // Create shader program
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glUseProgram(shaderProgram);
-
-    // Main loop
     bool quit = false;
+    SDL_Event event;
     while (!quit)
     {
-        SDL_Event event;
+
+        Uint64 currentTime = SDL_GetPerformanceCounter();
+        double deltaTime = (currentTime - previousTime) * secondsPerCount;
+        previousTime = currentTime;
+
+        std::cout << "deltaTime: " << deltaTime << std::endl;
+
+        float moveSpeed = deltaTime * 2.f;
+        float rotSpeed = deltaTime * 1.2f;
+
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
+            {
                 quit = true;
+                break;
+            }
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_w) {
+                    pos.x += dir.x * moveSpeed;
+                    pos.y += dir.y * moveSpeed;
+                }
+                if (event.key.keysym.sym == SDLK_s) {
+                    pos.x -= dir.x * moveSpeed;
+                    pos.y -= dir.y * moveSpeed;
+                }
+                if (event.key.keysym.sym == SDLK_d) {
+                    float old_dirx = dir.x;
+                    dir.x = dir.x * cos(rotSpeed) - dir.y * sin(rotSpeed);
+                    dir.y = old_dirx * sin(rotSpeed) + dir.y * cos(rotSpeed);
+                    float old_planex = plane.x;
+                    plane.x = plane.x * cos(rotSpeed) - plane.y * sin(rotSpeed);
+                    plane.y = old_planex * sin(rotSpeed) + plane.y * cos(rotSpeed);
+                }
+                if (event.key.keysym.sym == SDLK_a) {
+                    float old_dirx = dir.x;
+                    dir.x = dir.x * cos(-rotSpeed) - dir.y * sin(-rotSpeed);
+                    dir.y = old_dirx * sin(-rotSpeed) + dir.y * cos(-rotSpeed);
+                    float old_planex = plane.x;
+                    plane.x = plane.x * cos(-rotSpeed) - plane.y * sin(-rotSpeed);
+                    plane.y = old_planex * sin(-rotSpeed) + plane.y * cos(-rotSpeed);
+                }
+            }
         }
 
-        std::cout << "ecem" << std::endl;
+        for (int x = 0; x < w; x++)
+        {
+            float camX = 2 * x / (float)w - 1;
+            struct Vec rayDir = {dir.x + plane.x * camX, dir.y + plane.y * camX};
 
-        // Clear the screen
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            struct Veci pos_map = {int(pos.x), int(pos.y)};
+            struct Vec sideDist = {};
+
+            struct Vec deltaDist = {
+                (rayDir.x == 0) ? 1e30 : std::abs(1 / rayDir.x),
+                (rayDir.y == 0) ? 1e30 : std::abs(1 / rayDir.y),
+            };
+
+            double perpWallDist;
+
+            struct Veci step = {};
+
+            int hit = 0;
+            int side;
+            if (rayDir.x < 0)
+            {
+                step.x = -1;
+                sideDist.x = (pos.x - pos_map.x) * deltaDist.x;
+            }
+            else
+            {
+                step.x = 1;
+                sideDist.x = (pos_map.x + 1.f - pos.x) * deltaDist.x;
+            }
+
+            if (rayDir.y < 0)
+            {
+                step.y = -1;
+                sideDist.y = (pos.y - pos_map.y) * deltaDist.y;
+            }
+            else
+            {
+                step.y = 1;
+                sideDist.y = (pos_map.y + 1.f - pos.y) * deltaDist.y;
+            }
+
+            while (hit == 0)
+            {
+                if (sideDist.x < sideDist.y)
+                {
+                    sideDist.x += deltaDist.x;
+                    pos_map.x += step.x;
+                    side = 0;
+                }
+                else
+                {
+                    sideDist.y += deltaDist.y;
+                    pos_map.y += step.y;
+                    side = 1;
+                }
+                if (map[pos_map.x][pos_map.y] > 0)
+                    hit = 1;
+            }
+
+            if (side == 0)
+                perpWallDist = (sideDist.x - deltaDist.x);
+            else
+                perpWallDist = (sideDist.y - deltaDist.y);
+
+            int lineHeight = (int)(h / perpWallDist);
+
+            lines[x] = new Line(LineConfig{
+                Vec{1.f - x / (w / 2.f),
+                    (lineHeight / 2.f) / (w / 2.f)},
+                Vec{1.f - x / (w / 2.f),
+                    -1.f * (lineHeight / 2.f) / (w / 2.f)}});
+
+        }
+
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Draw the triangle
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        for (int i = 0; i < w; i++)
+        {
+            lines[i]->Use();
+            delete lines[i];
+        }
 
-        // Swap the front and back buffers
         SDL_GL_SwapWindow(window);
     }
 
-    // Cleanup and exit
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
+    std::cout << "quiting" << std::endl;
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(window);
     SDL_Quit();
-
     return 0;
 }
