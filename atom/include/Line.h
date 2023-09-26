@@ -7,6 +7,7 @@
 struct LineConfig {
     Vec begin;
     Vec end;
+    Color color;
 }; typedef struct LineConfig LineConfig;
 
 class Line
@@ -75,7 +76,7 @@ public:
         GLint lineColorLoc = glGetUniformLocation(shaderProgram, "lineColor");
         if (lineColorLoc != -1)
         {
-            glUniform3f(lineColorLoc, 1.0f, 0.0f, 0.0f); // Çizgi rengi: Kırmızı
+            glUniform3f(lineColorLoc, config.color.r, config.color.g, config.color.b); // Çizgi rengi: Kırmızı
         }
         else
         {
