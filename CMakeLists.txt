@@ -2,53 +2,58 @@ cmake_minimum_required(VERSION 3.21)
 
 project(atom)
 
-# SETUP VARIABLES:
-
-# list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_INCLUDE_PATH ${PROJECT_SOURCE_DIR}/include)
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/bin/${CMAKE_BUILD_TYPE}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 
+if (WIN32)
+    set(SDL2_DIR "${CMAKE_SOURCE_DIR}/external/SDL2/cmake")
+    set(SDL2_image_DIR "${CMAKE_SOURCE_DIR}/external/SDL2_image")
+    set(SDL2_ttf_DIR "${CMAKE_SOURCE_DIR}/external/SDL2_ttf")
+endif()
 
-# SETUP SDL2
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIR})
 
-# find_package(SDL2 REQUIRED)   # <<< probably best practice.
-                                # But lets do it manually for now.
-                                #   The downside is that if the development environment
-                                #   differ from others (which they tend to do).
-                                #   Therefore each developer must change the SDL2 paths to their SDL2 folder.
-                                #   ...and libs is probably not compatible with all compilers.
+if (UNIX AND NOT APPLE)
+    find_package(SDL2_image REQUIRED)
+    find_package(SDL2_ttf REQUIRED)
+endif()
 
-# NOTE: Folders here contain both SDL2 and SDL2_image files.
-set(SDL2_LIB_DIR ${PROJECT_SOURCE_DIR}/SDL/lib)
-set(SDL2_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/SDL/include)
-set(SDL2_LIBRARY ${PROJECT_SOURCE_DIR}/SDL/bin)
+if (WIN32)
 
-message(STATUS "SDL2_LIB_DIR ${SDL2_LIB_DIR}")
-message(STATUS "SDL2_INCLUDE_DIR ${SDL2_INCLUDE_DIR}")
-message(STATUS "SDL2_LIBRARY ${SDL2_LIBRARY}")
+    set(SDL2_BIN "${CMAKE_SOURCE_DIR}/external/SDL2/x86_64-w64-mingw32/bin")
+    set(SDL2_image_BIN "${CMAKE_SOURCE_DIR}/external/SDL2_image/x86_64-w64-mingw32/bin")
+    set(SDL2_ttf_BIN "${CMAKE_SOURCE_DIR}/external/SDL2_ttf/x86_64-w64-mingw32/bin")
 
-# SETUP INCLUDE AND LINK DIRS:
+    set(SDL2_IMAGE_INCLUDE_DIR ${SDL2_image_DIR}/x86_64-w64-mingw32/include)
+    set(SDL2_TTF_INCLUDE_DIR ${SDL2_ttf_DIR}/x86_64-w64-mingw32/include)
+
+    set(SDL2_IMAGE_LIBRARIES ${SDL2_image_DIR}/x86_64-w64-mingw32/lib)
+    set(SDL2_TTF_LIBRARIES ${SDL2_ttf_DIR}/x86_64-w64-mingw32/lib)
+
+    link_directories(
+        ${SDL2_IMAGE_LIBRARIES}
+        ${SDL2_TTF_LIBRARIES}
+    )
+
+    include_directories(
+        ${SDL2_IMAGE_INCLUDE_DIR}
+        ${SDL2_TTF_INCLUDE_DIR}
+    )
+
+endif()
 
 set(ATOM_SOURCE_DIR ${PROJECT_SOURCE_DIR}/atom)
-set(IMGUI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/ImGUI)
+set(IMGUI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/ImGUI)
 
 include_directories(
-    ${SDL2_INCLUDE_DIR}
     ${ATOM_SOURCE_DIR}/include
     ${IMGUI_SOURCE_DIR}/include
 )
-
-link_directories(
-    ${SDL2_LIB_DIR}
-)
-
-
-# INCLUDE FILES THAT SHOULD BE COMPILED:
-
 file(GLOB_RECURSE SRC "${ATOM_SOURCE_DIR}/src/*.cpp" "${ATOM_SOURCE_DIR}/include/*.hpp" "${IMGUI_SOURCE_DIR}/src/*.cpp")
 
 message(STATUS "Add source files:")
@@ -59,20 +64,25 @@ message(STATUS "")
 
 add_executable(${PROJECT_NAME} ${SRC})
 
+if (WIN32)
+    target_link_libraries(
+        ${PROJECT_NAME}
+            mingw32
+            ${SDL2_LIBRARIES} 
+            SDL2_image
+            SDL2_ttf
+    )
+endif()
 
-# LINK PROGRAM
+if (UNIX AND NOT APPLE)
+    target_link_libraries(
+        ${PROJECT_NAME}
+            ${SDL2_LIBRARIES} 
+            ${SDL2_IMAGE_LIBRARIES} 
+            ${SDL2_TTF_LIBRARIES} 
+    )
+endif()
 
-target_link_libraries(
-    ${PROJECT_NAME}
-        mingw32
-        SDL2main
-        SDL2
-        SDL2_image
-        SDL2_ttf
-)
-
-
-# COPY OVER STATIC FILES
 
 message(STATUS "Copying all assets to destination folder...")
 file(
@@ -81,7 +91,10 @@ file(
 )
 
 message(STATUS "Copying all dependencies to destination folder...")
-file(GLOB PROJECT_DEPENDENCIES ${SDL2_LIBRARY}/*.dll)
+
+if(WIN32)
+    file(GLOB PROJECT_DEPENDENCIES ${SDL2_BIN}/*.dll ${SDL2_image_BIN}/*.dll ${SDL2_ttf_BIN}/*.dll)
+endif()
 
 foreach(Dependency IN LISTS PROJECT_DEPENDENCIES)
     file(

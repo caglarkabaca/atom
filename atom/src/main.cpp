@@ -97,6 +97,8 @@ int main(int, char* []) {
 	// game loop
 	while (isRunning) {
 
+        std::cout << "loop" << std::endl;
+
 		//Fps limitor�
 		fps_first = SDL_GetTicks();
 		delta = fps_first - fps_last;
