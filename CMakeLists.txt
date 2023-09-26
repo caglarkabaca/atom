@@ -54,7 +54,7 @@ include_directories(
     ${ATOM_SOURCE_DIR}/include
     ${IMGUI_SOURCE_DIR}/include
 )
-file(GLOB_RECURSE SRC "${ATOM_SOURCE_DIR}/src/*.cpp" "${ATOM_SOURCE_DIR}/include/*.hpp" "${IMGUI_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE SRC "${ATOM_SOURCE_DIR}/src/*.cpp" "${IMGUI_SOURCE_DIR}/src/*.cpp")
 
 message(STATUS "Add source files:")
 foreach(SRC_FILE IN LISTS SRC)
@@ -71,6 +71,7 @@ if (WIN32)
             ${SDL2_LIBRARIES} 
             SDL2_image
             SDL2_ttf
+            "-Wl,--subsystem,console"
     )
 endif()
 
