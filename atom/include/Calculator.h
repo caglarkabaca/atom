@@ -208,7 +208,7 @@ public:
 
         int lineHeight = *resultData;
 
-        std::cout << " gpu lineh: " << *resultData << std::endl;
+        //std::cout << " gpu lineh: " << *resultData << std::endl;
 
         return LineConfig{
             Vec{1.f - x / (w / 2.f),

@@ -7,6 +7,9 @@
 #include "Line.h"
 #include "Calculator.h"
 
+#define CPU 0
+#define GPU 1
+
 int map[10][10] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -49,6 +52,7 @@ int main(int argc, char *argv[])
     }
 
     Calculator calc = Calculator(linearMap);
+    char renderType = CPU;
 
     Uint32 lastUpdate = SDL_GetTicks();
     float deltaTime;
@@ -73,6 +77,16 @@ int main(int argc, char *argv[])
                 break;
             }
             if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_e) {
+                    renderType = GPU;
+                    std::cout << "GPU" << std::endl;
+                }
+
+                if (event.key.keysym.sym == SDLK_q) {
+                    renderType = CPU;
+                    std::cout << "CPU" << std::endl;
+                }
+
                 if (event.key.keysym.sym == SDLK_w) {
                     pos.x += dir.x * moveSpeed;
                     pos.y += dir.y * moveSpeed;
@@ -166,16 +180,20 @@ int main(int argc, char *argv[])
 
             int lineHeight = (int)(h / perpWallDist);
 
-            std::cout << "cpu lineh: " << lineHeight;
-            calc.calculateLine(x, pos, dir, plane);
+            //std::cout << "cpu lineh: " << lineHeight;
 
-            lines[x] = LineConfig{
-                Vec{1.f - x / (w / 2.f),
-                    (lineHeight / 2.f) / (w / 2.f)},
-                Vec{1.f - x / (w / 2.f),
-                    -1.f * (lineHeight / 2.f) / (w / 2.f)},
-                (map[pos_map.x][pos_map.y] == 1) ? Color {1.f, 0.f, 0.f} : Color{0.f, 1.f, 0.f}
-                };
+            if (renderType == CPU) {
+                lines[x] = LineConfig{
+                    Vec{1.f - x / (w / 2.f),
+                        (lineHeight / 2.f) / (w / 2.f)},
+                    Vec{1.f - x / (w / 2.f),
+                        -1.f * (lineHeight / 2.f) / (w / 2.f)},
+                    (map[pos_map.x][pos_map.y] == 1) ? Color {1.f, 0.f, 0.f} : Color{0.f, 1.f, 0.f}
+                    };
+            } else {
+                lines[x] = calc.calculateLine(x, pos, dir, plane);
+            }
+
         }
 
         glClear(GL_COLOR_BUFFER_BIT);
@@ -187,7 +205,7 @@ int main(int argc, char *argv[])
 
         Uint64 endTime = SDL_GetPerformanceCounter();
         float elapsed = (endTime - startTime) / (float)SDL_GetPerformanceFrequency();
-        std::cout << "FPS: " << 1.f / elapsed << std::endl;
+        //std::cout << "FPS: " << 1.f / elapsed << std::endl;
 
         //break;
     }
