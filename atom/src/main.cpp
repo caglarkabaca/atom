@@ -3,8 +3,9 @@
 #include "SDL.h"
 #include "GL/glew.h"
 
-#include "Line.h"
 #include "utils.h"
+#include "Line.h"
+#include "Calculator.h"
 
 int map[10][10] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -37,6 +38,17 @@ int main(int argc, char *argv[])
 
     Line line = Line();
     LineConfig lines[w];
+
+    int* linearMap = (int*) malloc(sizeof(int) * 100);
+
+    int index = 0;
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            linearMap[index++] = map[j][i];
+        }
+    }
+
+    Calculator calc = Calculator(linearMap);
 
     Uint32 lastUpdate = SDL_GetTicks();
     float deltaTime;
@@ -154,6 +166,9 @@ int main(int argc, char *argv[])
 
             int lineHeight = (int)(h / perpWallDist);
 
+            std::cout << "cpu lineh: " << lineHeight;
+            calc.calculateLine(x, pos, dir, plane);
+
             lines[x] = LineConfig{
                 Vec{1.f - x / (w / 2.f),
                     (lineHeight / 2.f) / (w / 2.f)},
@@ -170,11 +185,11 @@ int main(int argc, char *argv[])
 
         SDL_GL_SwapWindow(window);
 
-
         Uint64 endTime = SDL_GetPerformanceCounter();
-        
         float elapsed = (endTime - startTime) / (float)SDL_GetPerformanceFrequency();
         std::cout << "FPS: " << 1.f / elapsed << std::endl;
+
+        //break;
     }
 
     std::cout << "quiting" << std::endl;
