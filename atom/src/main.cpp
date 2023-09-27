@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow("atom", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL);
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
-    //SDL_GL_SetSwapInterval(0); // VSYNC
+    // SDL_GL_SetSwapInterval(0); // VSYNC
     glewInit();
 
     int w = 800; // WITDH
@@ -42,11 +42,13 @@ int main(int argc, char *argv[])
     Line line = Line();
     LineConfig lines[w];
 
-    int* linearMap = (int*) malloc(sizeof(int) * 100);
+    int *linearMap = (int *)malloc(sizeof(int) * 100);
 
     int index = 0;
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
+    for (int i = 0; i < 10; i++)
+    {
+        for (int j = 0; j < 10; j++)
+        {
             linearMap[index++] = map[j][i];
         }
     }
@@ -76,26 +78,32 @@ int main(int argc, char *argv[])
                 quit = true;
                 break;
             }
-            if (event.type == SDL_KEYDOWN) {
-                if (event.key.keysym.sym == SDLK_e) {
+            if (event.type == SDL_KEYDOWN)
+            {
+                if (event.key.keysym.sym == SDLK_e)
+                {
                     renderType = GPU;
                     std::cout << "GPU" << std::endl;
                 }
 
-                if (event.key.keysym.sym == SDLK_q) {
+                if (event.key.keysym.sym == SDLK_q)
+                {
                     renderType = CPU;
                     std::cout << "CPU" << std::endl;
                 }
 
-                if (event.key.keysym.sym == SDLK_w) {
+                if (event.key.keysym.sym == SDLK_w)
+                {
                     pos.x += dir.x * moveSpeed;
                     pos.y += dir.y * moveSpeed;
                 }
-                if (event.key.keysym.sym == SDLK_s) {
+                if (event.key.keysym.sym == SDLK_s)
+                {
                     pos.x -= dir.x * moveSpeed;
                     pos.y -= dir.y * moveSpeed;
                 }
-                if (event.key.keysym.sym == SDLK_d) {
+                if (event.key.keysym.sym == SDLK_d)
+                {
                     float old_dirx = dir.x;
                     dir.x = dir.x * cos(rotSpeed) - dir.y * sin(rotSpeed);
                     dir.y = old_dirx * sin(rotSpeed) + dir.y * cos(rotSpeed);
@@ -103,7 +111,8 @@ int main(int argc, char *argv[])
                     plane.x = plane.x * cos(rotSpeed) - plane.y * sin(rotSpeed);
                     plane.y = old_planex * sin(rotSpeed) + plane.y * cos(rotSpeed);
                 }
-                if (event.key.keysym.sym == SDLK_a) {
+                if (event.key.keysym.sym == SDLK_a)
+                {
                     float old_dirx = dir.x;
                     dir.x = dir.x * cos(-rotSpeed) - dir.y * sin(-rotSpeed);
                     dir.y = old_dirx * sin(-rotSpeed) + dir.y * cos(-rotSpeed);
@@ -116,88 +125,87 @@ int main(int argc, char *argv[])
 
         for (int x = 0; x < w; x++)
         {
-            float camX = 2 * x / (float)w - 1;
-            struct Vec rayDir = {dir.x + plane.x * camX, dir.y + plane.y * camX};
 
-            struct Veci pos_map = {int(pos.x), int(pos.y)};
-            struct Vec sideDist = {};
+            if (renderType == GPU)
+                lines[x] = calc.calculateLine(x, pos, dir, plane);
 
-            struct Vec deltaDist = {
-                (rayDir.x == 0) ? 1e30 : std::abs(1 / rayDir.x),
-                (rayDir.y == 0) ? 1e30 : std::abs(1 / rayDir.y),
-            };
-
-            double perpWallDist;
-
-            struct Veci step = {};
-
-            int hit = 0;
-            int side;
-            if (rayDir.x < 0)
+            if (renderType == CPU)
             {
-                step.x = -1;
-                sideDist.x = (pos.x - pos_map.x) * deltaDist.x;
-            }
-            else
-            {
-                step.x = 1;
-                sideDist.x = (pos_map.x + 1.f - pos.x) * deltaDist.x;
-            }
+                float camX = 2 * x / (float)w - 1;
+                struct Vec rayDir = {dir.x + plane.x * camX, dir.y + plane.y * camX};
 
-            if (rayDir.y < 0)
-            {
-                step.y = -1;
-                sideDist.y = (pos.y - pos_map.y) * deltaDist.y;
-            }
-            else
-            {
-                step.y = 1;
-                sideDist.y = (pos_map.y + 1.f - pos.y) * deltaDist.y;
-            }
+                struct Veci pos_map = {int(pos.x), int(pos.y)};
+                struct Vec sideDist = {};
 
-            while (hit == 0)
-            {
-                if (sideDist.x < sideDist.y)
+                struct Vec deltaDist = {
+                    (rayDir.x == 0) ? 1e30 : std::abs(1 / rayDir.x),
+                    (rayDir.y == 0) ? 1e30 : std::abs(1 / rayDir.y),
+                };
+
+                double perpWallDist;
+
+                struct Veci step = {};
+
+                int hit = 0;
+                int side;
+                if (rayDir.x < 0)
                 {
-                    sideDist.x += deltaDist.x;
-                    pos_map.x += step.x;
-                    side = 0;
+                    step.x = -1;
+                    sideDist.x = (pos.x - pos_map.x) * deltaDist.x;
                 }
                 else
                 {
-                    sideDist.y += deltaDist.y;
-                    pos_map.y += step.y;
-                    side = 1;
+                    step.x = 1;
+                    sideDist.x = (pos_map.x + 1.f - pos.x) * deltaDist.x;
                 }
-                if (map[pos_map.x][pos_map.y] > 0)
-                    hit = 1;
-            }
 
-            if (side == 0)
-                perpWallDist = (sideDist.x - deltaDist.x);
-            else
-                perpWallDist = (sideDist.y - deltaDist.y);
+                if (rayDir.y < 0)
+                {
+                    step.y = -1;
+                    sideDist.y = (pos.y - pos_map.y) * deltaDist.y;
+                }
+                else
+                {
+                    step.y = 1;
+                    sideDist.y = (pos_map.y + 1.f - pos.y) * deltaDist.y;
+                }
 
-            int lineHeight = (int)(h / perpWallDist);
+                while (hit == 0)
+                {
+                    if (sideDist.x < sideDist.y)
+                    {
+                        sideDist.x += deltaDist.x;
+                        pos_map.x += step.x;
+                        side = 0;
+                    }
+                    else
+                    {
+                        sideDist.y += deltaDist.y;
+                        pos_map.y += step.y;
+                        side = 1;
+                    }
+                    if (map[pos_map.x][pos_map.y] > 0)
+                        hit = 1;
+                }
 
-            //std::cout << "cpu lineh: " << lineHeight;
+                if (side == 0)
+                    perpWallDist = (sideDist.x - deltaDist.x);
+                else
+                    perpWallDist = (sideDist.y - deltaDist.y);
 
-            if (renderType == CPU) {
+                int lineHeight = (int)(h / perpWallDist);
+
                 lines[x] = LineConfig{
                     Vec{1.f - x / (w / 2.f),
                         (lineHeight / 2.f) / (w / 2.f)},
                     Vec{1.f - x / (w / 2.f),
                         -1.f * (lineHeight / 2.f) / (w / 2.f)},
-                    (map[pos_map.x][pos_map.y] == 1) ? Color {1.f, 0.f, 0.f} : Color{0.f, 1.f, 0.f}
-                    };
-            } else {
-                lines[x] = calc.calculateLine(x, pos, dir, plane);
+                    (map[pos_map.x][pos_map.y] == 1) ? Color{1.f, 0.f, 0.f} : Color{0.f, 1.f, 0.f}};
             }
-
         }
 
         glClear(GL_COLOR_BUFFER_BIT);
-        
+
         line.SetLines(lines, w);
         line.Use();
 
@@ -205,9 +213,7 @@ int main(int argc, char *argv[])
 
         Uint64 endTime = SDL_GetPerformanceCounter();
         float elapsed = (endTime - startTime) / (float)SDL_GetPerformanceFrequency();
-        //std::cout << "FPS: " << 1.f / elapsed << std::endl;
-
-        //break;
+        // std::cout << "FPS: " << 1.f / elapsed << std::endl;
     }
 
     std::cout << "quiting" << std::endl;

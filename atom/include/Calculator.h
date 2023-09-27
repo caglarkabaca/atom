@@ -39,7 +39,7 @@ const char *computeShaderSource = R"(
         vec2 plane = vec2(inputVectors[4], inputVectors[5]);
         int x = int(inputVectors[6]);
 
-        float camX = 2 * x / float(w - 1);
+        float camX = 2 * x / float(w) - 1;
         vec2 rayDir = vec2(dir.x + plane.x * camX, dir.y + plane.y * camX);
 
         ivec2 pos_map = ivec2(int(pos.x), int(pos.y));
@@ -207,8 +207,6 @@ public:
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
         int lineHeight = *resultData;
-
-        //std::cout << " gpu lineh: " << *resultData << std::endl;
 
         return LineConfig{
             Vec{1.f - x / (w / 2.f),
