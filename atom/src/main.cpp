@@ -123,13 +123,22 @@ int main(int argc, char *argv[])
             }
         }
 
-        for (int x = 0; x < w; x++)
+        if (renderType == GPU)
         {
 
-            if (renderType == GPU)
-                lines[x] = calc.calculateLine(x, pos, dir, plane);
+            LineConfig *lines = calc.calculateLines(pos, dir, plane);
 
-            if (renderType == CPU)
+            glClear(GL_COLOR_BUFFER_BIT);
+            line.SetLines(lines, w);
+            line.Use();
+            SDL_GL_SwapWindow(window);
+
+            delete lines;
+        }
+
+        if (renderType == CPU)
+        {
+            for (int x = 0; x < w; x++)
             {
                 float camX = 2 * x / (float)w - 1;
                 struct Vec rayDir = {dir.x + plane.x * camX, dir.y + plane.y * camX};
@@ -202,18 +211,18 @@ int main(int argc, char *argv[])
                         -1.f * (lineHeight / 2.f) / (w / 2.f)},
                     (map[pos_map.x][pos_map.y] == 1) ? Color{1.f, 0.f, 0.f} : Color{0.f, 1.f, 0.f}};
             }
+
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            line.SetLines(lines, w);
+            line.Use();
+
+            SDL_GL_SwapWindow(window);
         }
-
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        line.SetLines(lines, w);
-        line.Use();
-
-        SDL_GL_SwapWindow(window);
 
         Uint64 endTime = SDL_GetPerformanceCounter();
         float elapsed = (endTime - startTime) / (float)SDL_GetPerformanceFrequency();
-        // std::cout << "FPS: " << 1.f / elapsed << std::endl;
+        std::cout << "FPS: " << 1.f / elapsed << std::endl;
     }
 
     std::cout << "quiting" << std::endl;
