@@ -193,7 +193,7 @@ public:
 
         glUseProgram(computeProgram);
 
-        glDispatchCompute(1, 1, 1);
+        glDispatchCompute(4, 1, 1);
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 

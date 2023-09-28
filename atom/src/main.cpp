@@ -65,7 +65,8 @@ int main(int argc, char *argv[])
     {
         Uint64 startTime = SDL_GetPerformanceCounter();
         Uint32 currentTick = SDL_GetTicks();
-        deltaTime = (currentTick - lastUpdate) / 1000.f;
+        //deltaTime = (currentTick - lastUpdate) / 1000.f;
+        deltaTime = 0.016;
         lastUpdate = currentTick;
 
         float moveSpeed = deltaTime * 2.5f;

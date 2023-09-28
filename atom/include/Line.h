@@ -61,6 +61,10 @@ public:
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
+        // Vertex verilerini GPU'ya kopyala
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+
     }
 
     void SetLines(LineConfig* lines, int count) {
@@ -83,11 +87,6 @@ public:
             vertices[i + 9] = lines[index].color.b;// b
             index += 1;
         }
-
-        // Vertex verilerini GPU'ya kopyala
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -97,6 +96,7 @@ public:
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (2 * sizeof(float)));
         glEnableVertexAttribArray(1);
+
     }
 
     void Use()
